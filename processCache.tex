@@ -1,0 +1,282 @@
+\newcommand{\pc}{ProcessCache\xspace}
+% Name we give to our "cachable units".
+\newcommand{\cacheunit}{exec-unit\xspace}
+% Lines of Code for P$
+\newcommand{\systemLOC}{ProcessCache\xspace}
+
+\chpt{\pc: Automatic Process-Level Memoization}
+\section{Abstract}
+\section{Introduction}
+
+Build Systems.
+Incremental Computing
+
+
+Omar Idea: Use forward build systems to motivate \pc? Then we can segue into a generalized system for memoizing: \pc.
+\section{Caching/Memoizing Computation}
+Linux utilizes the \code{execve} system call to launch a new process image. This is the standard way
+a program is launched. We refer to a \textit{program} as the root command that \pc will execute on.
+
+\pc parses the command line arguments passed to it and attempts to \code{execve} the given program.
+\code{./process \textunderscore cache [process cache params] -- <exe> [exe params]}
+A program is comprised of possibly many processes, those processes may themselves spawn new child processes and contain multiple threads, any child process may further call \code{execve} spawning new sub-programs. See Figure \ref{fig:exec-units} for details. The root \cacheunit will always exists, as it is created by \pc based on the CLI arguments as
+described above.
+
+We use a unique key to uniquely identify every program [CITE]. Whenever \pc sees a call to
+\code{execve}, it checks the program specified by the system call. \pc does a lookup in our cache, a cache hit means we have seen this program before. The cache contains the outputs of this program. Instead of executing
+the program, \pc copies the output file and write the correct output to stdout and stderr. \pc essentially skips running the program but still produces the correct output of the program.
+
+\subsection{Determinism}
+\pc operates under the assumption that if a program is executed multiple times, with the same program
+inputs, it will produce the same outputs, that is, the program executes \textit{deterministically}.
+
+In practice this is not always the case due to various sources of non-determinism that sneak in [CITE Dettrace].
+- Runtime systems like Dettrace handle all sources of non-determinsm for a program.
+- One large source of non-determinsm for programs is thread and process scheduling. Systems like detthreads
+  can handle these.
+
+
+\pc is compatible with the orthogonal work on determinism enforcment at various levels. However,
+\pc does not require a program to be deterministic or to use a dynamic enforcement mechanism to
+produce correct output. When \pc encounters a never before seen program + input combination, it
+captures the results of this program. This is a valid result for this program, subsequent executions of this program + inputs will be skipped and the cached results will be used instead.
+
+This works around issues of different thread and process scheduling, etc.
+
+As long as we consider all inputs (even tricky ones like time) to a program, it is valid to cache and
+skip.
+
+\pc could be combined with other systems like DETTRACE, ARNOLD, Dettreads, etc (CITE).
+
+\subsection{Handling Program Side-Effects}
+A pure program would have no observable effects.
+
+An effectful program will have some observable behavior on the system. Most commonly, a program will make
+changes to the filesystem, such as modifying, deleting, or writing to files. Write to stdout or stderr.
+A program may also write bytes to the network, or display results on the terminal or a graphic user
+interface.
+
+Any obeservable change to the state of the world is known as a program side effect. To effetively simulate
+a program being skipped with \pc we must be able to perform the same side effects a program would have done. \pc handles common side-effects seen in batch workloads: writing to output files: stateful changes
+to the filesytem.
+
+\pc does not support networking. There is a long list of possible side effects a Linux program may
+support which are not implemented due to too much engineering effort, these include: sending signals,
+creating FIFOs, or many OS operations.
+
+\subsection{Correctness}
+When skipping, any caching system like \pc should give the same results as if the computation was to actually be executed.
+
+\pc is able to skip redundant exec-executions and only re-execute programs whose inputs have changed.
+
+As an example consider make. Running make from a "clean" state with no build files will force all build
+rules to execute. Future runs of make will only execute the build rules where an input has changed.
+
+We expect make to produce the same results after a "make clean" versus running "make" and allowing make
+to automatically skip unnecessary re-computation. This property is known as from-scratch-consistency.
+
+\pc is designed in such a way to always maintain correctness. \pc introspects all relevant IO
+events a program executes. So it is always able to precisely determine all actions required to later
+emulate the execution of the program.
+
+When \pc detects IO events it cannot handle and skip, e.g. writing bytes to the network, sending signals
+to other processes, ioctl, \pc can always maintain correctness by simply choosing not to skip the
+program and falling back to executing it.
+
+\section{\pc Design}
+% Lock Held By Omar over whole section %
+We present \pc, a system to automatically cache and skip unnecessary reexecution of computation. By tracking program input and outputs, \pc is automatically able to detect redundant computation. The next time the same exec is executed, \pc checks if any input has changed. If no input has changed, we can skip re-executing the \cacheunit and simply re-execute the program side-effects. An external observer should not be able to determine whether \pc actually executed a \cacheunit or skipped it, save for a noticeable speed-up of execution time.
+
+\pc is able to skip entire "exec trees", that is, programs made of multiple calls to processes and execs.
+\subsection{Determining Granularity of Memoization Units}
+
+\begin{figure*}
+\centering
+\subfloat[]{
+    \label{fig:single-exec-unit}
+    \includegraphics[scale=0.5]{"pc_single_exec-crop.pdf"}
+}
+\subfloat[]{
+\includegraphics[scale=0.4]{"pc_multi_process-crop.pdf"}
+}
+\subfloat[]{
+\label{fig:multi-exec-unit}
+\includegraphics[scale=0.3]{"pc_multi_exec-crop.pdf"}
+
+}
+\caption{The \cacheunit provides a useful abstraction over diverse program fork-exec structures. Processes are represented by darker circles with the letter P. Threads are represented by lighter
+circles with the letter T. (a) In the simplest case, a program contains one \cacheunit with one process. (b) An exec-unit may internally contain multiple processes and those processes may be multi-threaded. (c) A program containing multiple \cacheunit with their own possibly complex internal
+structure.}
+\label{fig:exec-units}
+\end{figure*}
+
+Omar: In this section I'm trying to introduce and convey a few concepts:
+\begin{itemize}
+  \item The "cachable-unit": systems in this space have a choice of how what "unit of work" to attempt to skip. These can be small like regions of instructions (what shortcut does). They can be domain specific like compilation-units for build systems. Or entire programs. It is useful to have a term which means the "unit of work". We pick Linux "execs" as our unit of caching.
+  \item I want to discuss the design tradeoffs between different cachable units. And argue the advantages of why we picked ours.
+  \end{itemize}
+
+What is the right granularity of computation to cache? We consider several factors:
+
+\begin{itemize}
+  \item Size of \cacheunit
+  \item Ease of tracking \cacheunit inputs.
+  \item Number of opportunies to skip \cacheunit
+\end{itemize}
+
+At one extreme end, we could cache and skip an entire program, but then any changes to an input would force us to reexectue the entire program, so our skipping wouldn't be very useful. On the other end of the spectrum, there are systems like Shortcut which are able to skip "mostly-deterministic" regions of code. Shortcut is able to skip SIZE number of instructions at a time. Shortcut's approach provides considerable \cacheunit to possibly skip, but this comes at the cost of complicated low-level machinery to track inputs and skip instruction-level computation.
+It is natural to consider the process as a candidate for our \cacheunit. In a multi-processed program,
+  we could then skip unnecessary processes, only executing those whose input has changed. Processes are difficult
+  however. A \cacheunit should be uniquely identified by its inputs, for a Linux process, the starting input
+  includes the entire state of the parent process from which our process was forked/cloned from. This "input" process-image state is difficult to capture. 
+Instead, \pc uses the Linux "exec" family of system calls to determine our \cacheunit. The exec family of system calls provides several advantages to caching. Unlike processes, execs have clear inputs: an exec can
+be uniquely identified by a tuple containing the: binary executable, command line arguments, environment variables, and any IO inputs read at runtime. This allows us to quickly and easily check if a \cacheunit needs
+to be recomputed (one of its inputs has changed) or can be skipped.
+
+Other benefits:
+\begin{itemize}
+  \item Many Linux programs are written in a "fork-exec" style of computation. So execs provide a natural
+  \cacheunit for us.
+  \item This design naturally supports multi-process execs (one exec call which spawns multiple processes) and multi-threaded programs. We only consider the execs and implementation details of a program like number of processes, threads, pipes, etc are abstracted over.
+\end{itemize}
+
+Our \cacheunit are based on execs within a program.
+
+
+\subsection{The \cacheunit}
+\pc works at the granularity of \cacheunit. \pc caches the results of \cacheunit and at every exec
+IO event, determines whether it can skip this \cacheunit. Figure \ref{fig:single-exec-unit} show the simplest
+case for a program: a single exec-unit containing one process. The \cacheunit abstracts over the process and
+thread structure of a program. Just like processes form a natural tree structure for programs, \cacheunit also
+create a tree structure as shown in Figure \ref{fig:multi-exec-unit}. Every individual \cacheunit in Figure \ref{fig:multi-exec-unit} is a candidate for skipping. Furthermore, \pc can also cache entire \cacheunit
+trees or subtrees.
+
+Programs with a fork-exec structure are the best candidates for \pc, as this creates the most candidate \cacheunit for skipping. Many Linux workloads follow the fork-exec paradigm, making our \cacheunit a natural choice.
+
+\subsection{Tracing Program IO Events}
+Build systems could be consider a type of caching/memoizing system where the user is expected to explicitly list every dependency and output of a build. This process both error prone and tedious. A user could over-specify (forcing the build system to rebuild unnecessarily) or under-specify (no rebuilding will happen even though an input has changed) dependencies. To avoid these issues, \pc automatically determines all program dependencies by tracing all relevant IO events a program executes.
+
+Our tracing happens at the system call level. We trace relevant IO system calls. This allows us to precisely determine the inputs and outputs to a program. It would be prohibitively expensive to trace every system call a program does. So \pc only traces a subset of all system calls. For example, IO-bound processes can perform many calls to read and write. Instead for file events, we intercept calls to open, creat, openat, etc. By introspecting the mode argument to this system call we can determine whether this file was open for read (input file) for write, truncate, read/write etc. So we use the argument flags to conservatively determine file inputs and outputs.
+
+\subsection{Cache Design}
+Our cache is persistent state which maps keys to values. Our cache aims to provide quick cache look up to determine whether we have seen a program execute before.
+On a cache-hit it is safe to skip execution of this program. We intercept calls to the execve system call and determine whether to skip or execute the \cacheunit. 
+
+\subsection{Uniquely Identifying A Program}
+In \pc, a computation can uniquely be identified by the inputs to our \cacheunit. Specifically a computation can be uniquely identified by the following tuple: (program binary, command line arguments, environment variables, current working directory, and input file).
+
+
+\subsection{Determining Program Input and Outputs}
+In a build system like make, the user is explicitly lists the inputs to and outputs to a build step. If the user
+incorrectly under-specifies or over-specifies inputs or outputs, (program dependencies), the build may fail in hard to diagnose ways.
+
+To avoid these issues, \pc automatically tracks IO events a program performs. This allows us to precisely track all program inputs and side effects. Program IO events are not the same as the input and outputs to a program. \pc must reason about the IO events of a program to determine the actual inputs and outputs of a program.
+
+
+\subsubsection{Pre-Conditions}
+
+\subsubsection{Post Conditions}
+\subsubsection{Generating Pre Conditions and Post Conditions from IO Events}
+\subsection{Skipping Program Execution}
+\subsubsection{Skipping Exec Calls}
+When \pc determines an \cacheunit can be skipped [REF to Relevant Section] it does the following:
+\begin{enumerate}
+  \item \pc determines the current \cacheunit can be completely skipped.
+  \item We could simply inject a exit/exit-group (exit-group is more correct as it handles exit of multithreaded programs properly) system call into the current process. This would not always work as program may rely on
+  the close-on-exec semantics of programs to execute properly. So instead we execute the execve system call with an empty binary which immediately call exit with the correct error code.
+  \item We consult the cache and execute all side effects this computation would have done. Namely, we copy all relevant output files to their correct location and write the correct bytes to stdout and stderr.
+  \item The rest of the program continues executing under \pc.
+\end{enumerate}
+
+\subsubsection{Skipping Leaf Nodes}
+Start by explaining skipping/caching for a leaf node sine it is simpler. Later generalize to enire sub trees
+\subsubsection{Skipping Entire Subtrees}
+
+\section{\pc Implementation}
+% Lock Held By Omar over whole section %
+
+\pc is implemented as a command line utility. Any program can run under \pc by simply prepending \pc to the command: GIVE EXAMPLE. \pc is written entirely in Rust made of \systemLOC lines of code.
+\subsection{Tracing IO Events of Tracee(s)}
+\pc uses the Linux ptrace system call for tracing IO events, skipping \cacheunit, and redirecting IO streams. \pc is implemented entirely as a userspace Linux program and does not require elevated privileges to execute beyond the CAP\textunderscore SYS\textunderscore PTRACE capability.
+
+While our prototype relies on PTRACE and Linux-specific implementation details, the methods presented in this paper may work with any IO tracing mechanism. Our methodology may be used with another OS (windows, MacOS) or some other interception mechanism (dtrace or in-kernel).
+
+\subsection{Process Tracing Via ptrace}
+Linux provides an API for tracing the behavior processes: ptrace. Ptrace allows a process to trace various
+events of interest that another process may be doing such as system calls, signals, process exits,
+thread and process spawning. Here we give a brief overview of ptrace.
+
+When working with ptrace we use the following terms. There is always a singular single-threaded tracing process, the \textit{tracer}. One or more thread or processes that are being traced, the \textit{tracee}s. Any time a tracee executes an event of interest, the OS will stop the tracee's execution and inform the tracer of this event.
+
+In this stopped state, the tracer can perform various low-level operation on the tracee.
+\begin{itemize}
+  \item Peek/Poke tracee memory: The tracer may read or write arbitrary bytes to the tracee's memory.
+  \item Inject arbitrary signals.
+  \item Read/write to program's registers.
+\end{itemize}
+
+These operations are quite low-level and simple on their own, but these operations are powerful
+primitives. We can implement high-level and useful operations from these primitives such as:
+injecting arbitrary system calls into a tracee, changing the arguments to a system call about to
+be performed, change or emulate a system call in a process, observe the results of a system call,
+implement user-level, abeit slow, scheduling for processes or threads.
+
+\subsection{Asynchronous Handling of Ptrace Events}
+
+Due to ptrace limitations, \pc is implemented as a single-threaded program, where our thread traces all
+tracee processes and threads. This main thread spends most of its time awaiting for new IO events to arrive
+from any tracee. A tracee may either be a process or a thread, when a tracee spawns a new process (a fork, clone, or vfork system call) or thread (a clone system call with the THREAD flag set) this new child process/thread is registered with ptrace. The tracer will receive IO events from this new child.
+
+Ptrace allows us to either ask for the next IO event from a specific thread/process (by specifying its PID/TID) or ask for the next available event from any child (WHAT FLAG?).
+
+
+Ptrace IO events may arrive from any tracee in no particular order. 
+
+GIVE EXAMPLE of when continuing across context is useful.
+
+To maximize the amount of IO events we handle, \pc handles IO event as they come.
+
+Our prototype abstracts over IO events arriving from different tracee processes/threads by implementing an
+asynchronous abstraction over IO events. We use a custom Rust asynchronous runtime executor.
+
+\subsection{Limitations}
+Talk about specific system calls we need to address here?
+- Pipes
+- Signals
+- Stdin
+- Sockets
+
+\section{Evaluation}
+
+\subsection{Build Systems}
+
+\begin{itemize}
+\item Compare to forward build systems e.g. rattle. Show comparable performance. Though, if Rattle auto-parallelizes the build we wouldn't come out ahead.
+\item Show we can work with a \texttt{make}-based build of a nontrivial project. Show reasonable performance when tracing the build. Show that if the Makefile contains an unnecessary dependency, \texttt{make} will run the unnecessary action but \pc will skip it instead.
+\end{itemize}
+
+\subsubsection{Bio Informatics}
+\begin{itemize}
+  \item RaxML \cacheunit
+  \item Mothur
+  \item BWA?
+  \item clustal
+  \item hmmer
+\end{itemize}
+
+\subsection{Other}
+
+\begin{itemize}
+    \item Compression or image-processing across a directory.
+    \item machine-learning prep workload?
+\end{itemize}
+
+\section{Related Work}
+\subsection{Build Systems}
+Make, CCache, Rattle, Basel, etc
+Shortcut and Arnold
+Record and Replay: RR
+Dettrace
+
+\section{Conclusion}
+\section{Acknowledgments}

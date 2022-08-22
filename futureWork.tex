@@ -1,0 +1,63 @@
+\chpt{Future Work}
+
+\section{ChaOS}
+
+\subsection{Introduction}
+C and C++ remain the most popular languages for writing systems software. The Linux programming interface is defined entirely in C. So using many Linux faculties requires using these C interfaces. Meanwhile, the C type system is relatively weak and unexpressive. So instead of function invariants being expressed via types, where they can be machine checked, they are relegated deep into the man pages as documentation. Furthermore, C does not feature any language-level error handling support. So C programmers often implement their own ad-hoc error handling boilerplate. Without language or compiler support, C error handling is tedious and error prone. Testing these error handlers is also difficult or sometimes impossible. The lack of error handling support from the C language, combined with the relative rarity of specific system calls failing may lead to hard to find bugs.
+To address these shortcomings we propose ChaOS, a testing framework for system call failures. ChaOS injects faults at system call sites to automatically root out bugs in software caused by unhandled or buggy system call error handlers.
+Working at the system call level allows us to leverage low-level properties of programs in a novel way. Finally, we leverage our insights on deterministic code execution to develop a fast and sound approach.
+
+\subsection{Background}
+
+\subsubsection{System Call Failures}
+
+System calls failures are reported via the integer return value of the function call. A programmer may simply forget to check these return values. Developers are expected to familiarize themselves with the nuanced and rare ways system calls can fail. See \ref{blockingandsignals} for an example. For example, a fork may fail due a \texttt{ENOMEM}, ``failed to allocate the necessary kernel structures because memory is tight''. While a write to a file may fail due to \texttt{ENOSPC} ``the device containing the file referred to by fd has no room for the data''. These failures can be so rare they never show up on testing environments or production systems for years.
+
+\subsubsection{Signals and System Calls}
+\label{blockingandsignals}
+One example of this complicated design is blocking system calls. Any blocking system call can be interrupted at any time by a signal: for example, when a user asks the program to momentarily suspend, or any time a child process exits, a signal is delivered. If this happens, the system call returns with a \texttt{EINTR}, and the user is expected to restart the system call by calling it again. This is an unfortunate design quirk of Linux. So in practice, any program that performs a blocking system call must be ready to handle a signal interrupting a system call at any time. Anecdotally, it seems difficult to believe most developers handle this correctly. Even high-level languages like Python have not always handled this behavior correctly \cite{pep}. Thus we believe blocking system calls interrupted by signals are an ideal test target for programs.
+
+\subsubsection{Ptrace}
+Ptrace is a Linux mechanism for tracing the execution of another program. Ptrace     is powerful enough to implement debuggers like GDB and system call tracing utilities     like strace. Ptrace allows one process, the tracer, to trace the execution of possibly     many processes or threads, the tracees. A tracee executes until some event specified by the tracer occurs. On such an event the tracee is stopped and the tracer receives an event message from the OS. Possible events include: system call execution, instruction execution, process spawn, process calls execve, and process exit, and more.
+
+While the tracee is stopped, the tracer can read and write to arbitrary memory and registers of the tracee. There are two system call interception events:
+\begin{enumerate}
+     \item Pre-hook events: A system call is stopped before it is executed.
+     \item Post-hook event: The program is stopped right after executing a system call but before the program executes.
+\end{enumerate}
+     We can combine ptrace interception events plus arbitrary reads and writes to memory and register to create powerful process manipulation mechanisms. With some work, ptrace can be used to inject arbitrary system calls into a process, change a system call's arguments before it is called, and skip or emulate system calls on behalf of the tracee.
+\subsection{ChaOS: Fault Injection Testing for System Calls}     
+ChaOS injects a fault at $S_n$, the nth system call executed by the current process. Every system call has a different set of system call specific error codes. We plan to implement handlers for most common system calls. Choosing which system call to target and which errors to inject will be largely heuristic based. We suspect most programs do not handle specific error codes and instead handle all possible errors ``coarsely'', therefore the specific error we inject is less relevant. We plan to experimentally validate this.
+
+\subsubsection{Forking At Fault Injection Sites}
+Consider injecting a failure at $S_n$ where the tracee successfully handles this fault injection by reporting a message to the user and exiting. Now what if we wanted to test $S_{n+1}$? A naive implementation of ChaOS would have to reexecute the entire program from the beginning. This approach would likely be restrictively slow.
+Instead, before injecting the fault at $S_n$, on the ptrace prehook event, we inject a fork system call. The fork system call creates an identical copy of the process and all its resources (e.g. opened file descriptors). We leave the original process \texttt{P} in a stopped state and inject the failure into the forked copy \texttt{P'}. The copy-on-write (COW) semantics of fork makes this process both fast and lightweight. This will likely be the most technically challenging part of the project. Care must be taken to avoid various issues. Forking tends to be a mechanism with poor orthogonality \cite{aforkintheroad}. Among many issues, fork is not thread-safe. Forking creates a deep copy so executing \texttt{P'} cannot modify the memory \texttt{P}. \texttt{P'} could still alter the state of the system via side effects. For example, writing to a file or reading from a socket. These side effects are the result of system calls execution. So our tracer intercepts system calls of \texttt{P'} and ensures no side effect will affect \texttt{P}. This way when \texttt{P'} is terminated, we can continue executing \texttt{P} in the correct program and system state.
+
+\subsubsection{Automatically Detecting Failures}
+Ultimately, ChaOS is designed to automatically detect unhandled system call failures. We defer making guarantees or giving a precise definition of handling system call failures. This is difficult to do as it is unclear what exactly it means for a program to properly ``handle'' a system call failure. We propose an automatic approach while avoiding (or at least largely minimizing) false positives. Let us consider the possible cases when injecting a fault at a system call site which would normally succeed (See \ref{syscallfailures} for ensuring a system call would succeed):
+\begin{itemize}
+\item Easy Case: The program reports an error and exits, we know this program successfully handled the system call failure.
+\item Easy Case: The program aborts unexpectedly (e.g segmentation fault) due to our fault injection, we have found an unhandled system call error.
+\item Hard Case: The program continues executing. Did the program handle the error, recovered, and continued executing? Or did it fail to handle the error and is now running in a state which the programmer did not intend?
+\end{itemize}
+We may handle the hard case as follows. As stated before, we inject faults into the forked version of the process, \texttt{P'}. After the fault injection, we can step through \texttt{P'} instruction-by-instruction observing the values of the program counter (PC) register. At the same time we also step through \texttt{P} (recall \texttt{P} was also stopped at $S_n$). \texttt{P} did not have a fault injected. If the values of the PC register are the same for \texttt{P} and \texttt{P'} we can conclude the program did not do any handling of the fault. It is currently unclear how many instructions to step through before concluding the error is unhandled. We expect to develop this heuristic based on observation of real world programs.
+The soundness of this approach relies on our previous work on deterministic program execution \cite{dettrace}. Given that P and P’ have identical starting states (this is true by the semantics of the fork system call) stepping through both process executions is a deterministic function of the initial starting state. So any differences in program execution must be attributed to the fault injection.
+
+\subsubsection{System call Failures}
+\label{syscallfailures}
+Not all system call failures represent exceptional circumstances. It is routine for system calls to return error results. System calls like stat and access are commonly used to probe around the filesystem, e.g. attempting to locate where a shared library resides.
+For our automatic detection of unhandled errors to work as described above, ChaOS should only inject failures at system calls which would succeed in the untouched execution. We ensure we only inject failures at succeeding system call sites as follows: 
+We inject a fork to spawn P’
+At this point P is in a stopped state.
+We allow P to execute its $S_n$ system call and stop $S_n$ at the system call post-hook event. In the post-hook event, we may observe the return value of $S_n$ and only inject a fault into P’ if $S_n$ succeeds.
+
+\subsubsection{Maintaining Program Invariants and Correctness}
+In general, programs may hold invariants we cannot know. Our fault injection may contradict programmer assumptions and lead to impossible scenarios. For example, a program executes the open system call to read some file f. Would it make sense to inject a fault on the open system call? Both yes and no seem to be sensible answers:
+\begin{itemize}
+\item Yes: A correct program should always check and handle all exceptional system call errors.
+\item No: This program may hold an invariant that the file should always exist. We have broken program invariants by injecting a fault so the program is still correct under its runtime assumptions.
+\end{itemize}
+While my personal opinion is that programs should handle even seemingly impossible scenarios, we will consult the relevant literature to see how this should be handled.
+
+\subsection{Evaluation}
+We will execute Chaos on a wide array of C programs. We are particularly interested in targeting systems which are expected to have high reliability and robustness to exceptional circumstances, such as databases and userspace filesystems. We hope to discover and validate many real bugs with this approach.

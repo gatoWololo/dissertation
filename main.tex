@@ -12,8 +12,9 @@
 
 %-------------------------------------------
 % Citation and bibliography commands. Edit as needed.
-\usepackage[nonamebreak,round]{natbib}
-\bibliographystyle{plainnat}
+\usepackage[square,sort,comma,numbers]{natbib}
+%\usepackage[nonamebreak,round]{natbib}
+\bibliographystyle{plain}
 %-------------------------------------------
 \usepackage{paralist} % for \compactenum \compactitem
 \usepackage{url}
@@ -23,6 +24,7 @@
 \usepackage{textcomp}
 \usepackage[normalem]{ulem}
 \usepackage{graphicx}
+\usepackage{listings} 
 
 \graphicspath{{./figures/}}
 
@@ -43,7 +45,7 @@
 %\specialization{Field of Specialization} % If your are in the Romance Languages or the Managerial Science and Applied Economics graduate group, uncomment this line and edit the text between the {}. If you do, you will also need to edit lines 71 and 72.
 \gradgroup{Computer and Information Science} % See https://provost.upenn.edu/phd-graduate-groups for names
 \date{2022} % Enter four-digit year of deposit
-\supervisor{Jose Devietti}
+\supervisor{Joseph Devietti}
 \supervisortitle{Associate Professor of Computer \& Information Science}
 %\cosupervisor{Co-supervisor's Typed Name} % If applicable, uncomment this line and edit the text between the {}. If you do, you will also need to edit line 39. 
 %\cosupervisortitle{Full Faculty Title and Affiliation} % If applicable, uncomment this line and edit the text between the {}. If you do, you will also need to edit line 38.
@@ -67,11 +69,11 @@
 %-------------------------------------------
 
 %%%% OPTIONAL ACKNOWLEDGEMENT
-\acknowledgement{Write your acknowledgement text here.} % If not applicable, comment out this line to hide the optional acknowledgement page. If you do, you will also need to edit line 86.
+\input{acknowledgments}
 %-------------------------------------------
 
 %%%% ABSTRACT
-\abstract{Write your abstract text here.} % Write your abstract between the {}
+\input{abstract}
 %-------------------------------------------
 
 %%%% OPTIONAL PREFACE

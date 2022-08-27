@@ -1,8 +1,10 @@
-\begin{abstract}{chap:abstract}
-  Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
-  incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis
-  nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo
-  consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse
-  cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non
-  proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-\end{abstract}
+\abstract{
+This dissertation covers various works during my PhD in the general area of Operating Systems and systems programming. Many projects share the themes of leveraging system call interposition and deterministic properties of programs. This dissertation covers features and uses of ptrace, a Linux API for tracing and modifying live processes.
+ This dissertation covers the following projects:
+ Dettrace: A deterministic container abstraction. Dettrace provides a containerized enviroment where any computation inside this container is guranteed to be deterministic via dynamic determinism enforcement. 
+ Capybara: A technique for fast, live TCP connection migration leveraging advancements in kernel-bypass IO technology and programmable switches in the datacenter environment.
+ ProcessCache: A system for automatically caching results of process-level computations. ProcessCache automatically infers inputs and outputs to a program and will only re-execute processes if inputs to them have changed. Otherwise, it skips unnecessary recomputation by using the cached results.
+ Tivo: Tivo introduces the concept of lightweight record and replay. Tivo replays TODO.
+ 
+ The future work covers two directions for future work: ChaOS: a fuzzing style system for injecting system call failures into sofware, ensuring errors are handled by applications. And a overview of current and future direction for system call interposition.
+}

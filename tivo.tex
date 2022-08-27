@@ -1,36 +1,20 @@
-%% =======================================================================================
-%% TIVO STARTS HERE
 \chpt{Tivo}
+This chapter is an updated and revised version the original lightweight record-and-replay paper \citep{tivo}. This project eventually came to be known as Tivo.
+\section{Abstract}
+     In this paper we present Tivo, a system for lightweight record-and-replay (RR). In contrast to traditional "fully deterministic" RR solutions, lightweight RR focuses on handling nondeterminism arising from thread communication for programs with concurrent, message-passing architectures. By decreasing nondeterminism in programs, lightweight RR decreases the number of intermittent failures in program's test suites. We evaluated the effectiveness of lightweight RR on Servo, a highly concurrent web browser. Our evaluation shows lightweight RR is effective at greatly reducing intermittent failures for some tests, but not others. Lightweight RR performance overhead remains a work in progress, but log sizes are quite small. We believe with further work lightweight RR could prove useful for lowering nondeterminism in programs at a negligible performance overhead.
 \section{Background}
 
 \subsection{Concurrent Message Passing Channels}
-Slowdowns of single-core year-to-year performance gains in computing systems have given rise to the need
-for highly concurrent systems that take advantage of multiple cores, now available
-in all machines.
-Concurrent systems are normally implemented using a thread plus shared-memory,
-using locks to enforce exclusive writes to memory. This type of systems make
-it difficult to reason about useful properties of concurrent programs:
-data race freedom and deadlock avoidance.
-Furthermore shared data and the locks that protect it are often logically decoupled. That is,
-grabbing a lock before accessing data is not enforced by the programming language or runtime.
-Instead, in the worst case, it is merely a programming convention buried in the documentation,
-or at best, enforced through the code API and encapsulation.
+Slowdowns of single-core year-to-year performance gains in computing systems gave rise to the need for highly concurrent systems that take advantage of multiple cores. Which are now available
+in most CPUs. Concurrency is usually implemented using threads with shared-memory based communication; locks enforce exclusive writes to memory. This type of systems make it difficult to reason about useful properties of concurrent programs, e.g. data race freedom and deadlock avoidance. Furthermore shared data and the locks that protect it are often logically decoupled. That is, grabbing a lock before accessing shared data is not enforced by the programming language or runtime. Instead, in the worst case, it is an implicit programming convention buried in the documentation, or at best, enforced through the object API and encapsulation.
 
-An alternative concurrency model popularized by languages like Go, Erlang, and Rust has
-arisen: message passing through channels. With message passing, isolated
-threads or processes communicate via channels, sending data as messages to each other.
-This avoids the need for the programmer to worry about data races, memory consistency
-models, or other low-level details. Furthermore channels come in many flavors:
-bounded, unbounded, blocking, non-blocking, and more. Channels can be implemented using
-shared memory, with lock or lock-free queues. Channels have comparable performance to the
-lock and shared memory approach.
+An alternative concurrency model popularized by languages like Go, Erlang, and Rust: message passing through channels. With message passing, isolated threads or processes communicate via channels, sending data as messages to each other. This avoids the need for the programmer to worry about data races, memory consistency models, or other low-level details. Furthermore channels come in many flavors: bounded, unbounded, blocking, non-blocking, and more. Channels can be implemented using
+shared memory, with lock or lock-free queues. Channels have comparable performance to threads and shared memory.
 
 \subsection{Intermittent Failures In Servo}
-Servo \cite{servo} is a parallel browser engine with the goals: highly concurrent,
-memory safe, and easily embeddable. Servo achieves these goals thanks to
-its use of Rust: a novel systems programming language with stronger memory safety,
-data race freedom, and static guarantees. As well as featuring a concurrent message passing
-architecture. This allows Servo to be highly concurrent, maximizing parallelism,
+Servo \citep{servo} is a parallel browser engine with the goals: highly concurrent,
+memory safe, and easily portable to various opearting systems and hardware. Servo achieves these goals thanks to its use of Rust: a novel systems programming language with stronger memory safety,
+data race freedom, and static guarantees. Servo also features a concurrent message passing architecture. This allows Servo to be highly concurrent, maximizing parallelism,
 while maintaining its components decoupled.
 
 Nondeterminism is inherent to concurrent systems. Servo is no exception. Adding to
@@ -38,7 +22,7 @@ the challenges of programming parallel systems, debugging is more difficult than
 sequential programs. This difficulty is further exacerbated by nondeterministic
 interleaving of threads.
 
-Servo runs a large suite of browser-agnostic tests known as web-platform-tests (WPT)
+Servo runs a large suite of browser-agnostic tests known as web-platform-tests (WPT) \cite{wpt}
 as part of the continuous integration system. WPT tests are expected to pass before
 changes to the code base are accepted. Unfortunately, Servo has hundreds of WPT tests that
 fail randomly for unknown reasons, known as intermittent failures. Since many intermittent
@@ -46,22 +30,22 @@ tests seemingly pass or fail at random. There are unknown sources of nondetermin
 Servo which cause intermittent failures.
 
 \subsection{Existing Record-and-Replay Solutions}
-Record-and-replay has been widely studied in academia and used in industry. One
-such state-of-the-art system is Mozilla's \texttt{rr} project \cite{rr}, which serves
+Record-and-replay has been widely studied in academia \cite{arnold, r2, panda, review-reverse-debugging, hunt_ddos:_2013, castor} and used in industry \cite{retrace}. One
+such state-of-the-art system is Mozilla's \code{rr} project \citep{mozilla-rr}, which serves
 as a robust RR debugging framework. It is successfully used in production
 with code-bases consisting of millions of lines of code like the Firefox web browser.
-At a high-level, \texttt{rr} works by intercepting nondeterministic OS system calls and recording
-their values, as well as recording thread and process scheduling so later it can faithfully
-replay them. During replay, \texttt{rr} uses its log to replay the system calls with the same
+At a high-level, \code{rr} works by intercepting nondeterministic OS system calls and recording
+their values, as well as recording thread and process scheduling. So later it can faithfully
+replay them. During replay, \code{rr} uses its log to replay the system calls with the same
 values seen during record, while dynamically handling scheduling to schedule threads
-and processes in the same order. \texttt{rr} can fully determinize any program,
+and processes in the same order. \code{rr} can fully determinize any program,
 so it must record a large amount of information about an execution, so its record logs
-end up being quite large. Furthermore \texttt{rr} sequentializes execution of threads and
+end up being quite large. Furthermore \code{rr} must sequentializes execution of threads and
 processes, incurring particularly high performance overhead on parallel workloads.
 
-While in principal \texttt{rr} is able to solve the problem with intermittent failures in Servo,
+While in principal \code{rr} is able to solve the problem with intermittent failures in Servo,
 we believe there can be a far more lightweight, high-level approach.
-\texttt{rr}'s implementation is OS dependent as it relies on many low-level OS details.
+\code{rr}'s implementation is OS-dependent as it relies on many low-level OS details.
 Lightweight RR attempts tame some of the nondeterminism inherent to concurrent systems
 while operating at a much higher level: channel communication and thread scheduling.
 All while preserving parallelism in programs, and offering low overhead.
@@ -69,21 +53,19 @@ All while preserving parallelism in programs, and offering low overhead.
 \section{Lightweight RR}
 Lightweight RR records and replays multi-threaded systems
 where communication and coordination happens mainly through channel communication.
-Lightweight RR does not attempt to provide faithful full program record and replay. Instead,
-it lowers the amount of nondeterminism inherent to concurrent systems. This trade off
-allows lightweight RR several benefits: the implementation is far simpler than
+Lightweight RR does not record all metadata required to perfectly replay a program execution. Instead, it aims to squash several sources of nondeterminism inherent to concurrent systems. This trade off allows lightweight RR several benefits: the implementation is far simpler than
 a full-fledged RR system, parallelism is maintained, only a tiny fraction of program
-execution is recorded making the implementation fast and the logs small.
+execution is recorded making the implementation fast and log size small.
 
-Lightweight RR handles the following sources of nondeterminism:
+Lightweight RR handles the following sources of nondeterminism for channels \footnote{The ideas presented here for lightweight RR are applicable to other areas of concurrency and program replay. See Section \ref{sec:tivo-future} for other possible use cases.}:
 \begin{itemize}
 \item \textbf{Message arrival order}. While messages sent by a thread down a channel are guaranteed to arrive in FIFO order, multiple threads may be sending messages to the same channel simultaneously. Thus, message arrival order can vary.
-\item \textbf{Select operation}. Channel implementations often have a \texttt{select} operation. A \texttt{select} allows for receiving one or more message(s) from any channel with a message at the time of the operation, or blocking until a message arrives. Which messages are ready on a given select is timing dependent, so this is a nondeterministic operation.
+\item \textbf{Select operation}. Channel implementations often have a \code{select} operation. A \code{select} allows for receiving one or more message(s) from any channel with a message at the time of the operation, or blocking until a message arrives. Which messages are ready on a given select is timing dependent, so this is a nondeterministic operation.
 \end{itemize}
 
-Our approach is guaranteed to successfully replay an execution given that the above are the only sources of nondeterminism. If programs have nondeterminism outside the scope of lightweight RR, e.g. network communication, IO, thread locking, those programs may not replay successfully. If the replay execution diverges from the recorded execution, we say the execution has \textit{desynchronized}.
+If the above were the only sources of nondeterminsm in a program, out approach would always successfully replay any recorded execution. Programs have nondeterminism outside the scope of lightweight RR, e.g. network communication, IO, thread locking \cite{dettrace}. Those programs may not replay successfully with lightweight RR. If the replay execution diverges from the recorded execution, we say the execution has \textit{desynchronized}. We believe we could combine lightweight RR with a lightweight dynamic determinism enforcement technique as done in DetFlow \cite{detflow}. 
 
-Lightweight RR is robust to desynchronizations. When desynchonization is detected, the lightweight RR stops replaying the recorded execution and falls back to allowing the program to run natively.
+Lightweight RR is robust to desynchronizations. When desynchonization is detected, lightweight RR can choose to stop replaying the recorded execution and falls back to allowing the program to run natively, or abort the program.
 
 \subsection{Lightweight RR for Intermittent Failures}
 Lightweight RR is designed to work in the context of software tests with intermittent
@@ -98,7 +80,7 @@ lightweight RR to lower the nondeterminism and thus the number of intermittent f
 for programs.
 
 \subsection{Supported Operations}
-For any message-passing channel implementation, we define the \textit{receiver} as the reading end, and the \textit{sender} as the writing end. We assume the channels are unbounded (do not have a maximum capacity), and may support multiple producers but a single consumer (MPSC). These assumptions fit the needs of most programs but nothing fundamentally stops us from supporting bounded, or multiple producers multiple consumer (MPMC) channels.
+For any message-passing channel implementation, we define the \textit{receiver} as the reading end, and the \textit{sender} as the writing end. We assume the channels are unbounded (do not have a maximum capacity), and may support multiple producers but a single consumer (MPSC). These assumptions fit the needs of most programs, However, this is not a fundamental short coming of lightweight RR. Nothing stops us from supporting bounded or multiple producers multiple consumer (MPMC) channels.
 
 Lightweight RR supports all common operations on channels, including:
 \begin{itemize}
@@ -127,8 +109,7 @@ We highlight the following advantages between traditional RR methods and lightwe
 \item Only channel communications events are recorded. No program data is recorded.
   Leading to smaller record logs.
 \item Robust to divergence of program execution during replay.
-\item The implementation wraps an existing channel implementation. Thus, the
-  implementation is a straightforward transform.
+\item The implementation wraps an existing channel implementation. Thus, the implementation is a straightforward transform.
 \end{itemize}
 
 \section{Design}
@@ -137,10 +118,9 @@ In order to faithfully replay execution of a program, we must assign a determini
 thread ID (DTI) to all threads. DTIs must be unique and deterministic
 even in the face of racy thread spawning. Starting from the main thread,
 every thread spawn event is assigned an ID equal to the number of children that
-have spawned from this thread so far $child\_id$. A single counter per thread keeps tracks of this information. Then, a DTI is generated as a vector of $child\_id$s from the main thread, down to the new thread. The main thread has a DTI of \texttt{[]} (an empty list). As an example, the first thread spawned by the main thread is assigned a DTI of \texttt{[1]}, while the second great-grandchild of the main thread would have a DTI of \texttt{[1, 1, 2]}. Therefore, the length of a DTI is equal to the depth of the thread tree.
+have spawned from this thread so far $child\_id$. A single counter per thread keeps tracks of this information. Then, a DTI is generated as a vector of $child\_id$s from the main thread, down to the new thread. The main thread has a DTI of \code{[]} (an empty list). As an example, the first thread spawned by the main thread is assigned a DTI of \code{[1]}, while the second great-grandchild of the main thread would have a DTI of \code{[1, 1, 2]}. Therefore, the length of a DTI is equal to the depth of the thread tree.
 
-Analogously, every channel receiver/sender pair is assigned a unique, deterministic channel ID (DCI).
-The DCS consists of a \texttt{(DTI, N)}, where \texttt{N} is a per-thread
+Analogously, every channel receiver/sender pair is assigned a unique, deterministic channel ID (DCI). The DCI consists of a \code{(DTI, N)}, where \code{N} is a per-thread
 counter, which is increased after generating a DTI.
 
 DTIs are necessary for correctly replaying executions. Meanwhile DCIs are useful to detect
@@ -148,7 +128,7 @@ desynchronizations, debugging, as well as understanding complex program interact
 threads, channels, and messages.
 
 \subsection{Recording Events}
-Given a channel message of type $T$, we transform it to a tuple \texttt{(T, DTI)}. Where \texttt{DTI} is
+Given a channel message of type $T$, we transform it to a tuple \code{(T, DTI)}. Where \code{DTI} is
 the DTI of the thread who sent this message. That is, a thread now sends its DIT down
 the channel along with the message, this allows us to track which thread the message
 originally came from.
@@ -161,16 +141,16 @@ For all channel communication events, we record:
 \item Event Id: A per-thread integer that increases by one on every channel communication
   event. This should be thought of as the \textit{logical time} that an event occurred at.
 \item Sender ID: The DTI of the sender of a message.
-\item Event Type: \texttt{send}, \texttt{receive}, \texttt{try\_receive}, \texttt{select}, etc.
+\item Event Type: \code{send}, \code{receive}, \code{try\_receive}, \code{select}, etc.
 \item Data Type: The type of data sent down the channel, e.g. string, integer, bool, etc.
-\item Channel Flavor: The channel variant for an event, e.g. \texttt{ipc-channel}, bounded channel,
-  \texttt{crossbeam channel}, etc.
+\item Channel Flavor: The channel variant for an event, e.g. \code{ipc-channel}, bounded channel,
+  \code{crossbeam channel}, etc.
 \item Event Status: Possible return variant of an event (see more below).
 \item DCI: The ID(s) of the channel(s) involved in this event.
 \end{itemize}
-Notice our record log does not need to record the value of the data sent down the channel.
+Notice our record log does not need to record the value of the data sent down the channel. However, it may be useful to record the bytes sent down channels. This can further aid in debugging or understanding when data values desynchronize.
 
-Event status are the possible return variants of an event. For example, \texttt{try\_receive}
+Event status are the possible return variants of an event. For example, \code{try\_receive}
 may either: timeout, get a receive error, or successfully receive a value. In case of a
 success we record the DTI of the sender thread. The sender's DTI is
 important for faithfully replaying executions when there are multiple writers
@@ -185,7 +165,7 @@ also record the DTI of the sender for all receivers which returned a message dur
 Many of the items recorded above are not strictly necessary. Instead, the are useful for
 robust logging (debugging), and detecting desynchronizations of executions. For users
 interested in running lightweight RR in production environments, many of these values could
-be removed at build-time.
+be removed based on a compile-time flag.
 
 \subsection{Replaying Events}
 While record mode tries to affect the program's execution as little as possible,
@@ -196,7 +176,7 @@ observable to the user, and lightweight RR always maintains correct semantics wi
 to the underlying channel implementation. Therefore, any program that works with a channel
 implementation will work equally well with lightweight RR.
 
-Using \texttt{(Sender ID, Event ID)} we can deterministically identify an event for any thread.
+Using \code{(Sender ID, Event ID)} we can deterministically identify an event for any thread.
 For a given event, we consult the log to see what actions are expected for this event.
 We compare the event type, DCI, and channel flavor to ensure we are still
 synchronized with the execution. Otherwise, a desynchronization error is returned.
@@ -205,29 +185,29 @@ Next, we consult the event status. If the status was e.g. timeout, we don't both
 doing the actual operation on the channel, and instead immediately return a timeout.
 Even if the event status indicates the event succeeded, we may still not
 do the actual operation. Instead, no matter the actual receive events e.g.
-\texttt{timeout\_receive}, \texttt{try\_receive},
-we implement a \texttt{rr\_recv()} as follows.
+\code{timeout\_receive}, \code{try\_receive},
+we implement a \code{rr\_recv()} as follows.
 
-\texttt{rr\_recv()} call the blocking \texttt{receive()} on the receiver directly.
-The blocking receive will eventually return a message of type \texttt{(DTI, T)}. We
-compare the received \texttt{DTI} against the expected \texttt{DTI} from the log.
+\code{rr\_recv()} call the blocking \code{receive()} on the receiver directly.
+The blocking receive will eventually return a message of type \code{(DTI, T)}. We
+compare the received \code{DTI} against the expected \code{DTI} from the log.
 If they match,
 we have found the correct message to return. Otherwise, this event came from another
-thread, so we add it to a per-receiver buffer of messages. We loop on \texttt{receive()}
-until the correct event is found. Next time there is a call to \texttt{rr\_recv()},
-the buffer is first checked for the expected event before looping on \texttt{receive()}.
+thread, so we add it to a per-receiver buffer of messages. We loop on \code{receive()}
+until the correct event is found. Next time there is a call to \code{rr\_recv()},
+the buffer is first checked for the expected event before looping on \code{receive()}.
 
-On \texttt{select}, we use the expected index/indices to retrieve the correct receiver(s)
-from the select set and call \texttt{rr\_recv()} on each receiver. Notice \texttt{rr\_recv}
+On \code{select}, we use the expected index/indices to retrieve the correct receiver(s)
+from the select set and call \code{rr\_recv()} on each receiver. Notice \code{rr\_recv}
 takes care of buffering all ``wrong'' messages from other senders, so the correct message
 is automatically returned.
 
-We must be careful with our use blocking \texttt{receive()} as a desynchronization may
+We must be careful with our use blocking \code{receive()} as a desynchronization may
 cause the thread to block forever. See Section \ref{sec:handle_desync}.
 
 \subsection{Running Off the End of the Log}
 When replaying an execution, it is common to fall of the end of the log. That is,
-there is no \texttt{(DTI, N + 1)} event in the log. Missing log entries usually mean
+there is no \code{(DTI, N + 1)} event in the log. Missing log entries usually mean
 that either: the program did not reach this point of the execution during record, or a desynchronization has occurred.
 
 The former can happen for programs that race between exiting and communicating through
@@ -255,46 +235,44 @@ above, to merely doing the operation the user has asked for. This allows us to
 continue the execution but with no determinism guarantees. We notify all threads
 blocked on the end-of-log conditional variable, this unblocks these threads and
 they continue running on desynchronization mode. Special care must be taken to
-flush any values buffered by our \texttt{rr\_recv()} operation.
+flush any values buffered by our \code{rr\_recv()} operation.
 
-If a program replay desynchronizes, threads blocking on \texttt{receive()} may never never
-return. To avoid deadlocks, we use \texttt{receive\_timeout()} instead of \texttt{receive()}
-in the implementation of \texttt{rr\_recv()}. If the timeout time elapses, we consider this
+If a program replay desynchronizes, threads blocking on \code{receive()} may never never
+return. To avoid deadlocks, we use \code{receive\_timeout()} instead of \code{receive()}
+in the implementation of \code{rr\_recv()}. If the timeout time elapses, we consider this
 a type of desynchronization error and run the rest of the program in desync mode.
 
 \section{Implementation}
-We implemented lightweight RR as a Rust library \texttt{rr-channel}. Our Rust implementation
-wraps two popular Rust libraries
-for channel communication: \texttt{ipc-channel} and \texttt{crossbeam-channel} (it would be
-trivial to support the standard library channels as well). Rust does not have
+We implemented lightweight RR as a Rust library \code{rr-channel}. Our Rust implementation wraps three popular Rust libraries
+for channel communication: \code{ipc-channel} and \code{crossbeam-channel}, and the Rust standard libray channel implementation. Rust does not have
 support for dependency injection or inheritance, so users must swap all instances of the
-channel library they are using to \texttt{rr-channel}. To make this process seamless,
-\texttt{rr-channel} exposes the exact same API as \texttt{ipc-channel} and
-\texttt{crossbeam-channel}. Therefore, the only change needed is editing the name of the
-dependency when it is imported.
+channel library they are using to \code{rr-channel}. To make this process seamless,
+\code{rr-channel} exposes the exact same API as \code{ipc-channel} and
+\code{crossbeam-channel}. Therefore, the only change needed is editing the name of the
+dependency when it is imported\footnote{This does not handle the case where a program dependency \textit{itself} uses any of these channels. For our evaluation, it was necessary to download the dependencies source code and manually patch the import. This is a current limiation of our approach.}.
 
-We must assign \texttt{DTI} to all threads. So a user must also use our
-\texttt{rr-channel} thread spawn function to ensure the thread receives a \texttt{DTI}. A
+We must assign \code{DTI} to all threads. So a user must also use our
+\code{rr-channel} thread spawn function to ensure the thread receives a \code{DTI}. A
 program may not always be able to use our thread spawn function: threads may spawn as in
-program dependencies outside the control of the user. \texttt{rr-channel} handles this
+program dependencies outside the control of the user. \code{rr-channel} handles this
 case by giving these threads
-a \texttt{None} \texttt{DTI}. Events are still recorded and replayed for \texttt{None}
-\texttt{DTI}. However, if two threads, both with \texttt{None} \texttt{DTI}s are both
+a \code{None} \code{DTI}. Events are still recorded and replayed for \code{None}
+\code{DTI}. However, if two threads, both with \code{None} \code{DTI}s are both
 writing to the same channel, we cannot distinguish these them, so the execution may not
 be deterministic. We print a warning to users if this case is detected.
 
-It is straightforward for our \texttt{rr-channel} implementation to support
+It is straightforward for our \code{rr-channel} implementation to support
 any channel implementations as long as the underlying implementation supports
-one single channel operation: \texttt{try\_receive()}.
+one single channel operation: \code{try\_receive()}.
 
 \section{Evaluation}
-For our evaluation, we integrate \texttt{rr-channel} into Servo. Servo is a
+For our evaluation, we integrate \code{rr-channel} into Servo. Servo is a
 highly complicated program featuring a fully concurrent, message passing architecture.
 Servo represents a high target for lightweight RR: as Servo uses many complicated channels, to send many messages among its multitude of threads.
 Therefore, Servo is the perfect platform to stress-test lightweight RR and get
 a proper sense on the limits of our approach.
 
-Thanks to the design of \texttt{rr-channel}, lightweight RR integration was fairly simple.
+Thanks to the design of \code{rr-channel}, lightweight RR integration was fairly simple.
 Even though Servo is split into many libraries, with dozens of decoupled components. One
 day's worth of work is enough to have Servo using lightweight RR channels everywhere.
 
@@ -302,7 +280,7 @@ day's worth of work is enough to have Servo using lightweight RR channels everyw
 
 To test the effectiveness of our approach we compiled a list of WPT tests known to
 fail intermittently in Servo. Using Github API we fetched all GitHub Issues for Servo
-marked as \texttt{I-intermittent}. We found 417 unique intermittently failing tests.
+marked as \code{I-intermittent}. We found 417 unique intermittently failing tests.
 We ran those 417 tests 100 times (baseline) to get the average number of times a
 test returned the following possible statuses:
 \begin{itemize}
@@ -365,7 +343,7 @@ soon.
 For the evaluation, the logs were written out using a compact, binary serializer.
 Out of 30 recorded logs from our tests above, the median log size was 78.5KB.
 A more in depth comparison would be needed to compare log sizes versus existing
-systems like \texttt{rr}. However, we believe the log sizes are small enough to
+systems like \code{rr}. However, we believe the log sizes are small enough to
 not add a storage burden, even for test suites with tens of thousands of tests.
 
 \section{Discussion}
@@ -386,12 +364,12 @@ for lightweight RR to be useful: Servo may be desynchronizing early on, so the r
 the program runs without much benefits from lightweight RR.
 See Section \ref{sec:future_work} for proposed solutions to this
 problem. Servo has known sources of nondeterminism we are not capturing. Some examples
-include \texttt{rayon}, a library for high-performance data-parallelism. Since \texttt{rayon} threads are
-not spawned through our thread spawn wrapper, these threads are not assigned DTIs. Therefore any message which comes from a \texttt{rayon} thread cannot be properly determinized.
-We have observed such messages coming from \texttt{rayon} threads.
+include \code{rayon}, a library for high-performance data-parallelism. Since \code{rayon} threads are
+not spawned through our thread spawn wrapper, these threads are not assigned DTIs. Therefore any message which comes from a \code{rayon} thread cannot be properly determinized.
+We have observed such messages coming from \code{rayon} threads.
 With further implementation it should be possible to assign deterministic thread
-identifiers to Servo threads. Similarly, Servo uses \texttt{Tokio} library for asynchronous programming. Threads spawned through \texttt{Tokio} are not determinized.
-Even handling \texttt{Tokio} and \texttt{rayon} threads, Servo naturally has many nondeterministic IO operations. Network traffic, disk IO, and timers, all contribute to nondeterministic executions in Servo.
+identifiers to Servo threads. Similarly, Servo uses \code{Tokio} library for asynchronous programming. Threads spawned through \code{Tokio} are not determinized.
+Even handling \code{Tokio} and \code{rayon} threads, Servo naturally has many nondeterministic IO operations. Network traffic, disk IO, and timers, all contribute to nondeterministic executions in Servo.
 
 It may just be the case that Servo is too nondeterministic in its current state to benefit
 from our approach. Perhaps a combination of lightweight RR and some small modifications
@@ -434,11 +412,11 @@ for any given execution of Servo, thus increasing confidence in deadlock-freedom
 
 The evaluation is currently incomplete. More work is required to understand what kinds
 of applications or tests benefit most from lightweight RR (if any). Performance is also
-beyond disappointing, work is needed to understand performance implications of lightweight
+currently disappointing, work is needed to understand performance implications of lightweight
 RR.
 
 \section{Conclusion}
-In this paper, we describe lightweight RR. A halfway point between heavyweight, fully
+In this paper, we describe lightweight RR. A hybrid approach between heavyweight, fully
 deterministic systems, and no determinism enforcement. Lightweight RR is designed to
 empirically lower the amount of intermittent test failures in a program's test suite,
 while enjoying minimal performance overhead and record-log sizes. Lightweight
@@ -446,5 +424,25 @@ RR has exciting and promising future work avenues beyond the just record and rep
 With more work, lightweight RR could prove to be a useful tool for the development
 and debugging of concurrent systems.
 
-%% =======================================================================================
-%% TIVO ENDS HERE
+\section{Addendum}
+In this section we cover some follow up work and thoughts after further research on lightweight RR. This project eventually stalled. Servo proved a hard program for diagnosing and evaluating the efficacy of lightweight RR. This is due to several reasons: Servo is massive and complicated, running scores of threads in parallel, Servo relies on a couple of Rayon parallelism and asynchronous frameworks: rayon and tokio. These frameworks have their own parallelism schemes and schedulers outside the current scope of lighweight RR, but they also present opportunities for future extensions, see Section \ref{sec:tivo-future}.
+
+
+\subsection{Future Directions and Extensions} \label{sec:tivo-future}
+In this section I present thoughts, challenges, and possible future extensions for this line of work.
+
+\subsubsection{Narrowing Origin of Desynchronizations}
+The current implementation of Servo + Tivo suffers from a large amount of desynchronization errors. These errors are extremely difficult to track down, even with the robust logging currently present in our Tivo implementation. I believe an automated approach for tracking the origin point of desynchronizations would be useful not only for debugging the design and implementation of Tivo, but as a general tool for developers trying to squash nondeterminism in their program.
+
+Tivo holds all the information necessary to understand how channels are moved between different threads and which channels send messages, from which thread, at any time. This information can be used to generate a "topology" or graph of channel communication for a program. Thinking about how messages flow through a program could help with automatically identifying sources of divergence.
+
+Tivo aims to be lightweight by only recording metadata associated with channel operations. I believe it could also be useful to have a "verbose" Tivo mode, where Tivo also records the data being sent through channels, this could help diagnose and detect divergences earlier.
+
+\subsubsection{Generalizing Tivo Ideas}
+This chapter presents Tivo mainly in the context of channels. I believe these same ideas could be generalized to other contexts to extend the usefulness of this approach.
+
+Atomic locks are useful in any concurrent program, even when channels are used, Servo still uses mutexes in several places. Ensuring deterministic access to data behind a lock is currently beyond the scope of Tivo. We could extend Tivo to support deterministic thread access in the same way we handle channel operations: during record, we use the DTI of a thread to record the ordering of lock acquisition for threads. During replay, threads many only access a lock in the same order as observed during replay. Threads that try acquiring a lock before their time are blocked until it is their turn.
+
+Asynchronous IO is a paradigm currently gaining a lot of traction. Most languages now have some support for asynchronous IO. The Linux kernel recently gained a new API for better asynchronous IO \cite{io-uring}. Many asynchronous IO language implementations provide a programming model where programmers write async functions. These functions may be paused at user-defined yield points, where they wait for some IO operation to complete. A runtime is responsible for scheduling these async functions. The runtime also polls a lower level IO queue where new IO events will arrive. These IO events are then handed back to paused async functions, where they continue executing from their yield point. In some languages like Rust, these async functions are known as \textit{futures} or \textit{tasks}.
+
+This async programming model suffers from analogous nondeterminism problems to those we have discussed in this chapter. I believe this is another context where the ideas presented by lightweight RR could help. We can slightly modify the async runtime to assign a deterministic task identifier to every future. Then lightweight RR records the scheduling of futures and creates a correspondence between an IO message and a specific future. In replay, lightweight RR could ensure IO events are given to the correct future as the record execution.

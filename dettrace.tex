@@ -138,13 +138,13 @@
 
 In data-processing contexts, it is often important to repeatably map each
 input to a unique, deterministic output.  Determinism is useful in software
-builds~\cite{google-bazel,DRB}, reproducible data analytics~\cite{pachyderm-website,codeocean-website}, and
-fault-tolerant distributed systems~\cite{munin, ambrosia, fault-tolerant-tutorial-1990, peerreview-2007}.
+builds~\citep{google-bazel,DRB}, reproducible data analytics~\citep{pachyderm-website,codeocean-website}, and
+fault-tolerant distributed systems~\citep{munin, ambrosia, fault-tolerant-tutorial-1990, peerreview-2007}.
 %
 Yet in spite of previous work on deterministic
-languages~\cite{bocchino_type_2009,monad-par,Scott:2017:MCD:3152284.3133897} and
+languages~\citep{bocchino_type_2009,monad-par,detflow} and
 operating
-systems~\cite{amittai_aviram_efficient_2010,hunt_ddos:_2013,tom_bergan_deterministic_2010},
+systems~\citep{amittai_aviram_efficient_2010,hunt_ddos:_2013,tom_bergan_deterministic_2010},
 it is challenging to enforce deterministic output in practice.
 %
 Thus we seek a practical {\em container} abstraction to isolate running software
@@ -156,10 +156,10 @@ Prior work on {deterministic operating systems} is neither necessary nor suffici
 encapsulation is needed to ensure the program starts in the {\em same state},
 without differences in system time or identifiers such as pids.
 %
-For example, Determinator~\cite{amittai_aviram_efficient_2010} does not provide
+For example, Determinator~\citep{amittai_aviram_efficient_2010} does not provide
 a repeatable notion of deterministic time.
 %
-dOS \cite{tom_bergan_deterministic_2010}
+dOS \citep{tom_bergan_deterministic_2010}
 provides a {\em deterministic process group} abstraction and can record-and-replay
 timing-related system calls.  But dOS also uses record-and-replay for filesystem
 interactions, leaving the filesystem outside of the ``deterministic box''.
@@ -169,7 +169,7 @@ includes file I/O.
 % dos ``used the racey deterministic stress test''
 % https://www.usenix.org/legacy/events/osdi10/tech/slides/bergan.pdf
 
-% Determinator~\cite{amittai_aviram_efficient_2010}, in contrast, requires a
+% Determinator~\citep{amittai_aviram_efficient_2010}, in contrast, requires a
 % custom filesystem...
 
 Ultimately, determinism is also a weaker property than what we desire --
@@ -202,7 +202,7 @@ system call like \code{time}) are accordingly reproducible. By enforcing
 reproducibility at the system call and ISA level, we can
 transparently export reproducibility to all higher levels such as language VMs.
 
-%% \note{As pointed out by the authors of Determinator~\cite{determinator}, there
+%% \note{As pointed out by the authors of Determinator~\citep{determinator}, there
 %%   are many applications of determinism.}
 %% \note{There has been no systematic application of deterministic OS's to
 %%   deterministic data processing.}
@@ -246,7 +246,7 @@ This paper makes the following contributions:
 
 \section{Why is Reproducibility Important?}
 
-Reproducibility confers many advantages for software development. Reproducibility is crucial during debugging; bugs that can't be reproduced are much harder to fix. In distributed systems, reproducibility ensures that all replicas behave the same way, accelerating consensus \cite{Abadi:2018:ODD:3271489.3181853} and enabling transparent fault recovery \cite{ambrosia}. Reproducibility also has more specific benefits in a range of software domains, which we explore next.
+Reproducibility confers many advantages for software development. Reproducibility is crucial during debugging; bugs that can't be reproduced are much harder to fix. In distributed systems, reproducibility ensures that all replicas behave the same way, accelerating consensus \citep{Abadi:2018:ODD:3271489.3181853} and enabling transparent fault recovery \citep{ambrosia}. Reproducibility also has more specific benefits in a range of software domains, which we explore next.
 
 \mypara{Reproducible Builds}
 {Bitwise-reproducible} builds confer many advantages. Builds can
@@ -255,10 +255,10 @@ confidently distributed knowing that the same artifact will be produced on any
 node of a cluster. Reproducible builds also increase software integrity, boosting confidence that a
 given binary originated from a particular source code release. For these
 reasons, many Linux distributions, catalyzed by the Debian Reproducible
-Builds (DRB)~\cite{DRB} effort, target bitwise reproducibility of all their packages.
+Builds (DRB)~\citep{DRB} effort, target bitwise reproducibility of all their packages.
 %
-Microsoft is pursuing reproducible software builds \cite{msft-rb} with support in its C\# and VB compilers \cite{msft-deterministic-compiler}.
-Google's Blaze/Bazel build system~\cite{google-bazel} encourages a reproducible build
+Microsoft is pursuing reproducible software builds \citep{msft-rb} with support in its C\# and VB compilers \citep{msft-deterministic-compiler}.
+Google's Blaze/Bazel build system~\citep{google-bazel} encourages a reproducible build
 ecosystem, to prevent spurious changes due to irreproducibility causing massive
 additional downstream rebuilds in Google's unified internal software repository.
 
@@ -266,7 +266,7 @@ To achieve reproducibility, every piece of the software
 build toolchain needs to be reproducible: preprocessors, compilers, scripts used
 in the build process, and so on. For example, to deal with timestamps that \code{tar}
 records for each file in the tarball, \code{tar} was extended with the \code{-{}-clamp-mtime} flag
-\cite{tar-clamp-mtime} to force these timestamps to a fixed value.
+\citep{tar-clamp-mtime} to force these timestamps to a fixed value.
 % https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=759999
 The modified \code{tar} program then needs to be packaged and distributed, and build scripts updated to use the new flag, before reproducibility is achieved.
 
@@ -274,19 +274,19 @@ The modified \code{tar} program then needs to be packaged and distributed, and b
 %Existing efforts to squash these sources of irreproducibility in builds all ultimately rely on the programmer to fix them.
 
 Whacking one irreproducible mole at a time is predictably laborious.
-%After its first year, DRB had \DrbOneYearReproCount of \DrbOneYearSupportedCount supported packages building reproducibly \cite{drb-1year}, and \DrbTwoYearReproCount reproducible packages (of \DrbTwoYearSupportedCount) after two years. After two years of development, we have achieved reproducibility for \OurNarrowReproPct of our \OurNarrowCount supported packages.\footnote{The total number of packages differs between our effort and DRB's current set, because we target a fixed set of packages to ensure clean experimental conditions (see \autoref{sec:methodology}), while new packages are constantly being added to Debian.}
-At present, after more than \DrbLifespan years of effort by dozens of DRB contributors, \DrbCurrentIrreproPct of current Debian packages (\DrbCurrentIrreproCount in all) remain irreproducible. While tools exist to identify sources of irreproducibility \cite{Ren:2018:ALU:3180155.3180224}, fixing a build is still a manual process. Even should DRB reach 100\% reproducibility, vigilance would be required to ensure that errant code changes did not reintroduce irreproducibility.
+%After its first year, DRB had \DrbOneYearReproCount of \DrbOneYearSupportedCount supported packages building reproducibly \citep{drb-1year}, and \DrbTwoYearReproCount reproducible packages (of \DrbTwoYearSupportedCount) after two years. After two years of development, we have achieved reproducibility for \OurNarrowReproPct of our \OurNarrowCount supported packages.\footnote{The total number of packages differs between our effort and DRB's current set, because we target a fixed set of packages to ensure clean experimental conditions (see \autoref{sec:methodology}), while new packages are constantly being added to Debian.}
+At present, after more than \DrbLifespan years of effort by dozens of DRB contributors, \DrbCurrentIrreproPct of current Debian packages (\DrbCurrentIrreproCount in all) remain irreproducible. While tools exist to identify sources of irreproducibility \citep{Ren:2018:ALU:3180155.3180224}, fixing a build is still a manual process. Even should DRB reach 100\% reproducibility, vigilance would be required to ensure that errant code changes did not reintroduce irreproducibility.
 
-\mypara{Computational Science} It is perhaps ironic that, while reproducing results is a cornerstone of the scientific method, many computational science tools are not reproducible. While chemical reactions and living organisms are intrinsically variable, there is no good reason for computation to behave similarly. Reproducibility in computational science would accelerate scientific advancement as scientists could more easily share, reproduce, and build upon one another's work. Improving the reproducibility of scientific results is a key focus for funding agencies \cite{NAP25303} and can be seen in our community in the growing artifact evaluation movement. We find a common bioinformatics tool to be irreproducible (\autoref{sec:verifyRepro}).
+\mypara{Computational Science} It is perhaps ironic that, while reproducing results is a cornerstone of the scientific method, many computational science tools are not reproducible. While chemical reactions and living organisms are intrinsically variable, there is no good reason for computation to behave similarly. Reproducibility in computational science would accelerate scientific advancement as scientists could more easily share, reproduce, and build upon one another's work. Improving the reproducibility of scientific results is a key focus for funding agencies \citep{NAP25303} and can be seen in our community in the growing artifact evaluation movement. We find a common bioinformatics tool to be irreproducible (\autoref{sec:verifyRepro}).
 
-\mypara{Machine Learning} There is growing interest in reproducible machine learning (ML) \cite{repro-ml-workshop}. Reproducibility enables auditing of models to see why they made certain decisions. It also makes it easier to see whether performance changes are attributable to, e.g., conscious design changes or incidental randomness like sampling of the training set. We apply \dettrace to the popular TensorFlow framework, which is well-known to be irreproducible \cite{github-tf-irrepro,pedl}.
+\mypara{Machine Learning} There is growing interest in reproducible machine learning (ML) \citep{repro-ml-workshop}. Reproducibility enables auditing of models to see why they made certain decisions. It also makes it easier to see whether performance changes are attributable to, e.g., conscious design changes or incidental randomness like sampling of the training set. We apply \dettrace to the popular TensorFlow framework, which is well-known to be irreproducible \citep{github-tf-irrepro,pedl}.
 
 %
 % joe: I took this out, seems a little too personal
 %{Indeed, even the Debian Project Lead, spends his personal development time
 %  patching packages, {\em one-by-one}, to improve reproducibility---for
 %  example, patching ``Fontconfig'', ``tweeny'', ``zstd", and ``vcr.py" in May
-%  2018~\cite{DPL-may}.}
+%  2018~\citep{DPL-may}.}
 % \begin{compactitem}
 % \item Reworked a patch for Fontconfig to make its output reproducible.
 % \item Opened a pull request for tweeny to make the build reproducible.
@@ -305,7 +305,7 @@ At present, after more than \DrbLifespan years of effort by dozens of DRB contri
 %% \end{itemize}
 
 % \note{Determinism is generally useful for batch-processing computations, for
-% example in bioinformatics\cite{detflow}.  Deterministic builds as foremost use
+% example in bioinformatics\citep{detflow}.  Deterministic builds as foremost use
 % case for determinism}
 
 \section{Reproducible Containers}
@@ -313,7 +313,7 @@ At present, after more than \DrbLifespan years of effort by dozens of DRB contri
 
 In this work we aim to provide a reproducible container abstraction. The container itself is specified as an initial filesystem state and a program (from the filesystem) to run. This program may in turn launch other programs, \eg{} if it is a shell. The programs running in the container may attempt to execute arbitrary x86 instructions and Linux system calls, though we do not guarantee that all such attempts succeed. In our initial prototype, containerized code can interact only with its filesystem and other programs running concurrently in the container. However, in the future we envision limited forms of external interaction being permitted if they preserve reproducibility, \eg{} downloading files with known checksums.
 
-Our reproducibility goal can be decomposed into two sub-properties: determinism and portability. For us, determinism is \emph{dataflow} determinism \cite{lu_toward_2011}, which means that, on a given machine, each read returns the same value on every run. This hides sources of irreproducibility like time and explicit randomness. Determinism implies many useful properties: the filesystem state after all processes have finished will be identical, as will the messages printed to standard output and standard error. Strictly speaking, due to the possibility of external errors that cannot be determinized, \eg{} running out of disk space, our guarantee is one of \emph{quasi-determinism} \cite{lvish-popl}: any two runs are either dataflow deterministic, or at least one run crashes due to an external failure.
+Our reproducibility goal can be decomposed into two sub-properties: determinism and portability. For us, determinism is \emph{dataflow} determinism \citep{lu_toward_2011}, which means that, on a given machine, each read returns the same value on every run. This hides sources of irreproducibility like time and explicit randomness. Determinism implies many useful properties: the filesystem state after all processes have finished will be identical, as will the messages printed to standard output and standard error. Strictly speaking, due to the possibility of external errors that cannot be determinized, \eg{} running out of disk space, our guarantee is one of \emph{quasi-determinism} \citep{lvish-popl}: any two runs are either dataflow deterministic, or at least one run crashes due to an external failure.
 
 Portability means that dataflow determinism extends across
 % \auditme{a class of}
@@ -360,7 +360,7 @@ Existing container technologies (like Docker) do not provide reproducibility: th
 \label{sec:repro-reqs}
 % ================================================================================
 
-Code running inside our user-space reproducible container has access to two major interfaces: the x86-64 instruction set and the Linux system call API. Because we place no restrictions on code in the container, it can contain arbitrary instructions and attempt arbitrary system calls. Inspired by the Popek and Goldberg virtualization requirements \cite{Popek:1974:FRV:361011.361073} which define the requirements to provide a virtual machine abstraction, we define the set of requirements for reproducibility. We analyze each documented x86-64 ISA instruction\footnote{There are some undocumented x86-64 instructions \cite{breaking-x86}. Handling these would be an interesting avenue for future work.} and system call to see if it can be a source of irreproducibility, and under which conditions if so. Of particular importance is identifying \emph{critical} members of an interface---those which permit irreproducibility but which cannot be reliably detected during execution. Any \emph{critical} instruction or system call could silently introduce irreproducibility.
+Code running inside our user-space reproducible container has access to two major interfaces: the x86-64 instruction set and the Linux system call API. Because we place no restrictions on code in the container, it can contain arbitrary instructions and attempt arbitrary system calls. Inspired by the Popek and Goldberg virtualization requirements \citep{Popek:1974:FRV:361011.361073} which define the requirements to provide a virtual machine abstraction, we define the set of requirements for reproducibility. We analyze each documented x86-64 ISA instruction\footnote{There are some undocumented x86-64 instructions \citep{breaking-x86}. Handling these would be an interesting avenue for future work.} and system call to see if it can be a source of irreproducibility, and under which conditions if so. Of particular importance is identifying \emph{critical} members of an interface---those which permit irreproducibility but which cannot be reliably detected during execution. Any \emph{critical} instruction or system call could silently introduce irreproducibility.
 
 Our use of \code{ptrace} means that we see all system calls made from the
 container, so there is no potential for a critical system call (we also handle
@@ -370,7 +370,7 @@ replacing it entirely with a deterministic counterpart
 % behavior with a reproducible result
 (like time calls), converting it into a nop (like sleep calls), or not supporting it and throwing a (reproducible) container-level error.
 
-There are many sources of irreproducibility within the latest x86-64 instruction set \cite{intel-sdm}. Privileged instructions are often irreproducible but will raise an exception in our user-level container. Some irreproducible user-level x86-64 instructions are difficult, though possible, to trap. \code{rdrand} and \code{rdseed} return random bits from a hardware entropy source, and can be trapped at the hypervisor level via the VT-x extensions, but not from ring 0.  Instructions like \code{rdpmc} (read from performance counter) are sometimes accessible from user-space but can be configured to cause traps via appropriate kernel settings.
+There are many sources of irreproducibility within the latest x86-64 instruction set \citep{intel-sdm}. Privileged instructions are often irreproducible but will raise an exception in our user-level container. Some irreproducible user-level x86-64 instructions are difficult, though possible, to trap. \code{rdrand} and \code{rdseed} return random bits from a hardware entropy source, and can be trapped at the hypervisor level via the VT-x extensions, but not from ring 0.  Instructions like \code{rdpmc} (read from performance counter) are sometimes accessible from user-space but can be configured to cause traps via appropriate kernel settings.
 
 Some floating-point instructions like \code{cvtsd2si} (which converts a double
 to an integer) are documented as having ``unpredictable behavior across
@@ -383,7 +383,7 @@ it is a potentially critical source of irreproducibility.
 \label{sec:tsx-intro}
 \mypara{TSX Irreproducibility}
 Ultimately, we found just one family of definitively critical instructions: the
-TSX instructions used for transactional memory and lock elision (also noted by \cite{mozilla-rr-tr}). A transaction
+TSX instructions used for transactional memory and lock elision (also noted by \citep{mozilla-rr-tr}). A transaction
 can abort for a variety of reasons, some of which---like the arrival of a
 timing interrupt---are highly irreproducible. A program can monitor its own
 aborts via the abort handler registered with the \code{xbegin} instruction, and
@@ -391,7 +391,7 @@ perform irreproducible computation as a result. While the presence of TSX can be
 hidden by crafting the return value of \code{cpuid}, an invalid or adversarial
 program can ignore \code{cpuid} and run these instructions anyway. We are not
 aware of any ability to trap on the execution of TSX instructions, though
-Intel's microcode updates that disabled prior buggy versions of TSX \cite{tsx-disable} show
+Intel's microcode updates that disabled prior buggy versions of TSX \citep{tsx-disable} show
 that software configurability does exist on some level. Hardware support for
 trapping critical instructions is necessary for efficient and complete
 detection, because the hardware knows definitively what instructions a program
@@ -471,14 +471,14 @@ the current cycle count. Fortunately, \code{rdtsc} can be trapped and emulated
 reproducibly, see \autoref{sec:insns}. Filesystem timestamps are a final source
 of timing information which we discuss in \autoref{sec:timestamps}.
 %
-With nondeterministic parallelism, racing threads can recreate high-resolution clocks, but our deterministic scheduling renders this moot \cite{aviram_determinating_2010}.
+With nondeterministic parallelism, racing threads can recreate high-resolution clocks, but our deterministic scheduling renders this moot \citep{aviram_determinating_2010}.
 
 
 \subsection{Signals and Timers}
 \label{sec:sig}
 % ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Signals are a prime source of irreproducibility as their arrival is typically asynchronous. In principle, signal generation and delivery can be made fully reproducible via a reproducible logical clock, as with deterministic shared memory synchronization \cite{kendo}. However, we have not found this necessary for our current workloads. Instead, \dettrace provides reproducibility for a subset of Linux signals. First, \dettrace does not support sending signals between user processes. It is important, however, that a user process can send itself signals. Some such signals are naturally reproducible: \code{SIGSEGV}, \code{SIGILL} and \code{SIGABRT} act like ``precise exceptions'' that halt program execution at a well-defined, reproducible state.
+Signals are a prime source of irreproducibility as their arrival is typically asynchronous. In principle, signal generation and delivery can be made fully reproducible via a reproducible logical clock, as with deterministic shared memory synchronization \citep{kendo}. However, we have not found this necessary for our current workloads. Instead, \dettrace provides reproducibility for a subset of Linux signals. First, \dettrace does not support sending signals between user processes. It is important, however, that a user process can send itself signals. Some such signals are naturally reproducible: \code{SIGSEGV}, \code{SIGILL} and \code{SIGABRT} act like ``precise exceptions'' that halt program execution at a well-defined, reproducible state.
 
 Timers, requested via system calls like \code{alarm}, are another common source of self-signals. To render timer expiration reproducible, timers in \dettrace expire ``instantaneously,'' invoking a signal handler if appropriate.
 % include-if-space
@@ -747,9 +747,9 @@ two Intel Xeon Silver 4114 Skylake processors, each with 10 cores (20 threads) r
 interception of the \code{cpuid} instruction (\autoref{sec:insns}). We use the full
 seccomp-bpf optimizations. Each node runs Ubuntu 18.04 LTS with the Linux 4.15 kernel.
 
-For our bioinformatics workflows, we used \code{RAxML} 8.2.10 with AVX support~\cite{raxml}, \code{Clustal} 2.1 in \code{-ALIGN} mode~\cite{clustal} and \code{HMMER} 3.1b2~\cite{hmmer}.
-%, \code{mothur} 1.39.5 in \code{make.contigs} mode~\cite{mothur}, \code{BWA} 0.7.10~\cite{bwa}.
-We used TensorFlow v1.14 in our ML experiments, using the \code{alexnet} and \code{cifar10} tutorials \cite{tf-models-tutorials} to perform model creation, training and inference. Bioinformatics and ML workloads run on a machine with two Intel Xeon E5-2618Lv3 (Haswell) processors each with 8 cores (16 threads) running at 2.3GHz, and 128GB of RAM. The machine runs Ubuntu 18.10 with Linux 4.18.
+For our bioinformatics workflows, we used \code{RAxML} 8.2.10 with AVX support~\citep{raxml}, \code{Clustal} 2.1 in \code{-ALIGN} mode~\citep{clustal} and \code{HMMER} 3.1b2~\citep{hmmer}.
+%, \code{mothur} 1.39.5 in \code{make.contigs} mode~\citep{mothur}, \code{BWA} 0.7.10~\citep{bwa}.
+We used TensorFlow v1.14 in our ML experiments, using the \code{alexnet} and \code{cifar10} tutorials \citep{tf-models-tutorials} to perform model creation, training and inference. Bioinformatics and ML workloads run on a machine with two Intel Xeon E5-2618Lv3 (Haswell) processors each with 8 cores (16 threads) running at 2.3GHz, and 128GB of RAM. The machine runs Ubuntu 18.10 with Linux 4.18.
 
 \subsection{Verifying Reproducibility}
 \label{sec:verifyRepro}
@@ -761,7 +761,7 @@ We used TensorFlow v1.14 in our ML experiments, using the \code{alexnet} and \co
   image distribution across our cluster. \dettrace
   nests within Docker without issue.} Inside the container, we use a
 slightly modified version of the
-\code{reprotest} utility version 0.7.8 \cite{reprotest} from the DRB
+\code{reprotest} utility version 0.7.8 \citep{reprotest} from the DRB
 project. \code{reprotest} builds each package twice, varying the
 conditions for each build to exacerbate irreproducibility. We
 configure \code{reprotest} to vary environment variables, build path,
@@ -794,7 +794,7 @@ irreproducibly.
 In fact, in a {stock} Wheezy system, \emph{zero} packages build
 reproducibly because of timestamps embedded by \code{tar}. So we adjust our
 driver script to unpack the deb packages using \code{dpkg-deb}, then run
-\code{strip-nondeterminism} \cite{strip-nondeterminism} on the individual files, stripping
+\code{strip-nondeterminism} \citep{strip-nondeterminism} on the individual files, stripping
 timestamps.
 Finally, \code{diffoscope} can do a meaningful bitwise comparison. % include-if-space
 The \dettrace builds do not require this workaround, as they are
@@ -903,7 +903,7 @@ A total of \OurNarrowDettraceFailCount packages failed to build due to known \de
 %% miscellaneous system calls and other implementation limits.
 
 \subsubsection{Comparison with DRB}
-\OurReproDRBIrreproCount of the packages that are reproducible under \dettrace are identified as \emph{irreproducible} in the current stretch release by DRB~\cite{drb-unrepro}. While those packages are newer than the Wheezy versions we use, the DRB effort has also categorized why these packages are irreproducible. Common reasons include build paths being captured in a build artifact, timestamps embedded in files and randomness affecting build artifacts. Though these issues have been resolved in hundreds of other packages, each package requires analyzing the cause of irreproducibility and getting patches accepted by maintainers. In contrast, \dettrace automatically makes a build immune to such variations.
+\OurReproDRBIrreproCount of the packages that are reproducible under \dettrace are identified as \emph{irreproducible} in the current stretch release by DRB~\citep{drb-unrepro}. While those packages are newer than the Wheezy versions we use, the DRB effort has also categorized why these packages are irreproducible. Common reasons include build paths being captured in a build artifact, timestamps embedded in files and randomness affecting build artifacts. Though these issues have been resolved in hundreds of other packages, each package requires analyzing the cause of irreproducibility and getting patches accepted by maintainers. In contrast, \dettrace automatically makes a build immune to such variations.
 
 \subsubsection{Comparison with Mozilla \code{rr}}
 \label{sec:eval-rr}
@@ -1089,21 +1089,21 @@ We ran the \code{alexnet} and \code{cifar10} programs in three configurations, e
 previous systems. We categorize this previous work into record-and-replay
 systems, and deterministic execution systems.
 
-Many \textbf{record and replay} (RnR) systems have been proposed both from academia \cite{thomas_j._leblanc_debugging_1987,ronsse_recplay:_1999,arnold,lee_respec:_2010,castor,Dunlap:2002:REI:844128.844148,Dunlap:2008:ERM:1346256.1346273} and industry \cite{mozilla-rr,vmware-rnr,pinplay}. These systems record a trace of one nondeterministic execution to enable subsequent replay of that execution, typically for debugging purposes. These systems have broadly similar interception requirements as \dettrace, since system calls are a prime source of irreproducibility that must be recorded in the trace. \dettrace borrows some implementation techniques from Mozilla's rr \cite{mozilla-rr} as it also relies on ptrace (a quantitative comparison with \code{rr} appears in \autoref{sec:eval-rr}). Many RnR systems target multithreaded workloads, as those are very challenging to debug without RnR support, and provide high-performance parallel recording and replaying.
+Many \textbf{record and replay} (RnR) systems have been proposed both from academia \citep{thomas_j._leblanc_debugging_1987,ronsse_recplay:_1999,arnold,lee_respec:_2010,castor,Dunlap:2002:REI:844128.844148,Dunlap:2008:ERM:1346256.1346273} and industry \citep{mozilla-rr,vmware-rnr,pinplay}. These systems record a trace of one nondeterministic execution to enable subsequent replay of that execution, typically for debugging purposes. These systems have broadly similar interception requirements as \dettrace, since system calls are a prime source of irreproducibility that must be recorded in the trace. \dettrace borrows some implementation techniques from Mozilla's rr \citep{mozilla-rr} as it also relies on ptrace (a quantitative comparison with \code{rr} appears in \autoref{sec:eval-rr}). Many RnR systems target multithreaded workloads, as those are very challenging to debug without RnR support, and provide high-performance parallel recording and replaying.
 %
 %% These systems differ in interception mechanism, ranging from binary translation
-%% (PinPlay~\cite{pin-deterministic-replay}) to approaches that, like \dettrace, use
-%% to {ptrace}~\cite{mozilla-rr}.
+%% (PinPlay~\citep{pin-deterministic-replay}) to approaches that, like \dettrace, use
+%% to {ptrace}~\citep{mozilla-rr}.
 %
 
 
-\textbf{Deterministic execution} schemes enforce determinism during program execution. Deterministic operating systems tackle several of the systems issues we describe in this paper, providing deterministic versions of OS abstractions like processes and threads. While Determinator \cite{amittai_aviram_efficient_2010} provides new OS abstractions for deterministic fork-join parallelism, and DDOS \cite{hunt_ddos:_2013} focuses on local network interactions, dOS \cite{tom_bergan_deterministic_2010} is closer to our work in offering a deterministic process group abstraction. The \emph{shim} abstraction in dOS bears similarity to Linux's ptrace API. Unlike \dettrace, dOS supports parallel execution of both threads and processes. However, dOS uses RnR for filesystem interactions, defining the boundaries of its determinism abstraction too narrowly to be useful for software builds which interact extensively with the filesystem. More generally, a custom OS is a heavyweight prerequisite to perform deterministic computation, and existing deterministic OSes have not evaluated portability across different microarchitectures.
+\textbf{Deterministic execution} schemes enforce determinism during program execution. Deterministic operating systems tackle several of the systems issues we describe in this paper, providing deterministic versions of OS abstractions like processes and threads. While Determinator \citep{amittai_aviram_efficient_2010} provides new OS abstractions for deterministic fork-join parallelism, and DDOS \citep{hunt_ddos:_2013} focuses on local network interactions, dOS \citep{tom_bergan_deterministic_2010} is closer to our work in offering a deterministic process group abstraction. The \emph{shim} abstraction in dOS bears similarity to Linux's ptrace API. Unlike \dettrace, dOS supports parallel execution of both threads and processes. However, dOS uses RnR for filesystem interactions, defining the boundaries of its determinism abstraction too narrowly to be useful for software builds which interact extensively with the filesystem. More generally, a custom OS is a heavyweight prerequisite to perform deterministic computation, and existing deterministic OSes have not evaluated portability across different microarchitectures.
 
 % From dOS paper Section 2.1:
 % ``In summary, a DPG experiences nondeterminism only when it: (1) reads data from an external source; (2) blocks to wait for external data; or (3) handles a signal sent from an external source. Our guarantee is that DPGs execute deterministically relative to a stream of such nondeterministic input, and also relative to the initial state of the DPG at the call to sys makedet. Note that this guarantee holds even across different machines.''
 % jld: The cross-machine portability doesn't hold if the core count changes, and they didn't really investigate x86 features like FP insn portability, or mention cpuid at all. Being generous to them, in general dOS seems to provide roughly the same abstraction as us but at much greater complexity/fragility since it's in the kernel. Also they don't have a container component, but you could imagine them adding that. Probably they have better performance, though.
 
-Other deterministic execution schemes focus on a single multithreaded process, determinizing interactions through shared memory. Some schemes target arbitrary binary programs \cite{devietti_dmp:_2009,coredet,derek_r._hower_calvin:_2011,devietti_rcdc:_2011,liu_dthreads:_2011,merrifield_conversion:_2013,kai_lu_efficient_2014,Merrifield:2015:HDT:2741948.2741960,Merrifield:2019:LDF:3297858.3304047}, providing generality at a modest performance overhead. Other schemes leverage language support to provide determinism for Haskell \cite{dph,eval-strategies,monad-par,lvish-popl,lvish-ppopp,concurrent-revisions-haskell} or Java \cite{bocchino_type_2009,Bocchino:2011:TRE:2032497.2032519} programs. Whether language-agnostic or specific, these approaches eliminate the influence of thread scheduling, but do not determinize IO interactions with the underlying OS and filesystem.  The scope of their guarantees is thus too small to be useful for reproducible builds. One exception is DetFlow \cite{Scott:2017:MCD:3152284.3133897} which provides deterministic parallel execution for batch jobs, though it lacks robust system call interception and requires a coordinator layer written in Haskell.
+Other deterministic execution schemes focus on a single multithreaded process, determinizing interactions through shared memory. Some schemes target arbitrary binary programs \citep{devietti_dmp:_2009,coredet,derek_r._hower_calvin:_2011,devietti_rcdc:_2011,liu_dthreads:_2011,merrifield_conversion:_2013,kai_lu_efficient_2014,Merrifield:2015:HDT:2741948.2741960,Merrifield:2019:LDF:3297858.3304047}, providing generality at a modest performance overhead. Other schemes leverage language support to provide determinism for Haskell \citep{dph,eval-strategies,monad-par,lvish-popl,lvish-ppopp,concurrent-revisions-haskell} or Java \citep{bocchino_type_2009,Bocchino:2011:TRE:2032497.2032519} programs. Whether language-agnostic or specific, these approaches eliminate the influence of thread scheduling, but do not determinize IO interactions with the underlying OS and filesystem.  The scope of their guarantees is thus too small to be useful for reproducible builds. One exception is DetFlow \citep{detflow} which provides deterministic parallel execution for batch jobs, though it lacks robust system call interception and requires a coordinator layer written in Haskell.
 
 %\begin{figure}
 %  %% \note{X Axis: Number of processes}
@@ -1129,10 +1129,10 @@ Other deterministic execution schemes focus on a single multithreaded process, d
 %% FROM OOPSLA17:
 %% ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 %% The most closely-related work to \name are deterministic operating systems like
-%% Determinator \cite{amittai_aviram_efficient_2010} and dOS
-%% \cite{tom_bergan_deterministic_2010} that provide determinism for a process, or
+%% Determinator \citep{amittai_aviram_efficient_2010} and dOS
+%% \citep{tom_bergan_deterministic_2010} that provide determinism for a process, or
 %% a set of processes, along with the filesystem and IPC mechanisms like
-%% pipes. DDOS \cite{hunt_ddos:_2013} extends the dOS system to a local network of
+%% pipes. DDOS \citep{hunt_ddos:_2013} extends the dOS system to a local network of
 %% machines. While these systems provide strong deterministic guarantees, they
 %% require a custom operating system which is a highly invasive change.
 
@@ -1140,24 +1140,24 @@ Other deterministic execution schemes focus on a single multithreaded process, d
 %% interactions deterministic. We divide this work into two camps: programming
 %% languages that enforce deterministic parallelism, and runtime systems that do
 %% so. Many of the deterministic languages are extensions to or libraries for
-%% Haskell, such as Data Parallel Haskell~\cite{dph}, Evaluation
-%% Strategies~\cite{eval-strategies}, monad-par~\cite{monad-par},
-%% LVish~\cite{lvish-popl}, and Concurrent
-%% Revisions~\cite{concurrent-revisions-haskell}.
+%% Haskell, such as Data Parallel Haskell~\citep{dph}, Evaluation
+%% Strategies~\citep{eval-strategies}, monad-par~\citep{monad-par},
+%% LVish~\citep{lvish-popl}, and Concurrent
+%% Revisions~\citep{concurrent-revisions-haskell}.
 %% %
 %% Concurrent Revisions, like Determinator, takes the view that each thread or task
 %% logically copies the entire heap, with changes reconciled at control-flow join
 %% points.
 %% %
-%% Outside of Haskell, several approaches to deterministic parallelism have also been proposed, including the NESL data-parallel functional language \cite{guy_blelloch_nesl:_1992}, stream-based programming models \cite{william_thies_streamit:_2002}, type-and-effect systems for imperative languages like Java \cite{bocchino_type_2009}, and a deterministic version of the Galois system for task-based parallelism \cite{nguyen_deterministic_2014}.
+%% Outside of Haskell, several approaches to deterministic parallelism have also been proposed, including the NESL data-parallel functional language \citep{guy_blelloch_nesl:_1992}, stream-based programming models \citep{william_thies_streamit:_2002}, type-and-effect systems for imperative languages like Java \citep{bocchino_type_2009}, and a deterministic version of the Galois system for task-based parallelism \citep{nguyen_deterministic_2014}.
 
 %% There are also many runtime systems that focus on making programs deterministic
 %% in a language-agnostic way. Some focus on programs without data races
-%% \cite{olszewski_kendo:_2009}, while others focus on making even racy programs
+%% \citep{olszewski_kendo:_2009}, while others focus on making even racy programs
 %% deterministic via hardware support
-%% \cite{devietti_dmp:_2009,derek_r._hower_calvin:_2011,devietti_rcdc:_2011}
+%% \citep{devietti_dmp:_2009,derek_r._hower_calvin:_2011,devietti_rcdc:_2011}
 %% or purely in software
-%% \cite{liu_dthreads:_2011,merrifield_conversion:_2013,kai_lu_efficient_2014,Merrifield:2015:HDT:2741948.2741960}.
+%% \citep{liu_dthreads:_2011,merrifield_conversion:_2013,kai_lu_efficient_2014,Merrifield:2015:HDT:2741948.2741960}.
 %% ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 \section{Conclusions}
@@ -1176,17 +1176,17 @@ We have described the design and implementation of \dettrace, which provides a n
 %
 %Our sequential scheduler can be generalized to support process-level parallelism in service of, \eg{} \code{make -j}. To mediate conflicts between processes, we might leverage ideas from deterministic multithreading systems.
 %We could integrate \dettrace with a
-%deterministic multithreading system such as Dthreads~\cite{dthreads} for
+%deterministic multithreading system such as Dthreads~\citep{dthreads} for
 %intra-process, shared-memory parallelism (although this incurs substantial
 %overheads).  Another approach for shared-memory parallelism is to integrate
-%\dettrace with language-level determinism, as in DetFlow~\cite{Scott:2017:MCD:3152284.3133897}.
+%\dettrace with language-level determinism, as in DetFlow~\citep{Scott:2017:MCD:3152284.3133897}.
 %In such a scenario, binaries with language-level determinism could be privileged
 %to ``escape'' the sandbox and avoid overheads.
 %%
-%As with other sandboxes, future work can also improve the interception layer. There is substantial scope to optimize our {ptrace} usage, following the example of Mozilla \code{rr}. Another approach would be to support a Windows reproducible container using the {\em pico process} abstraction for system-call interception---the same mechanism used for the Windows Subsystem for Linux (WSL)~\cite{WSL}.
+%As with other sandboxes, future work can also improve the interception layer. There is substantial scope to optimize our {ptrace} usage, following the example of Mozilla \code{rr}. Another approach would be to support a Windows reproducible container using the {\em pico process} abstraction for system-call interception---the same mechanism used for the Windows Subsystem for Linux (WSL)~\citep{WSL}.
 %
 
-%% One method we've begun to explore is to sacrifice some portability and require a kernel module: \ie{} use the Dune approach~\cite{Belay:2012:DSU:2387880.2387913} to grant the user-space sandbox access to full Intel VT-x hardware-assisted virtualization support, enabling cheaper support for system call emulation and the ability to more broadly trap on instructions (like \code{rdrand}).
+%% One method we've begun to explore is to sacrifice some portability and require a kernel module: \ie{} use the Dune approach~\citep{Belay:2012:DSU:2387880.2387913} to grant the user-space sandbox access to full Intel VT-x hardware-assisted virtualization support, enabling cheaper support for system call emulation and the ability to more broadly trap on instructions (like \code{rdrand}).
 
 %
 

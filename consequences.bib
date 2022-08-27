@@ -1,3 +1,340 @@
+@misc{afl,
+    title={american fuzzy lop},
+    howpublished={\url{https://lcamtuf.coredump.cx/afl/}}
+    }
+
+@article{fuzz-scheduler,
+author = {Burckhardt, Sebastian and Kothari, Pravesh and Musuvathi, Madanlal and Nagarakatte, Santosh},
+title = {A Randomized Scheduler with Probabilistic Guarantees of Finding Bugs},
+year = {2010},
+issue_date = {March 2010},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+volume = {45},
+number = {3},
+issn = {0362-1340},
+url = {https://doi.org/10.1145/1735971.1736040},
+doi = {10.1145/1735971.1736040},
+abstract = {This paper presents a randomized scheduler for finding concurrency bugs. Like current stress-testing methods, it repeatedly runs a given test program with supplied inputs. However, it improves on stress-testing by finding buggy schedules more effectively and by quantifying the probability of missing concurrency bugs. Key to its design is the characterization of the depth of a concurrency bug as the minimum number of scheduling constraints required to find it. In a single run of a program with n threads and k steps, our scheduler detects a concurrency bug of depth d with probability at least 1/nkd-1. We hypothesize that in practice, many concurrency bugs (including well-known types such as ordering errors, atomicity violations, and deadlocks) have small bug-depths, and we confirm the efficiency of our schedule randomization by detecting previously unknown and known concurrency bugs in several production-scale concurrent programs.},
+journal = {SIGPLAN Not.},
+month = {mar},
+pages = {167–178},
+numpages = {12},
+keywords = {concurrency, race conditions, randomized algorithms, testing}
+}
+
+
+
+@inproceedings {fuzzing-error-handling,
+author = {Zu-Ming Jiang and Jia-Ju Bai and Kangjie Lu and Shi-Min Hu},
+title = {Fuzzing Error Handling Code using {Context-Sensitive} Software Fault Injection},
+booktitle = {29th USENIX Security Symposium (USENIX Security 20)},
+year = {2020},
+isbn = {978-1-939133-17-5},
+pages = {2595--2612},
+url = {https://www.usenix.org/conference/usenixsecurity20/presentation/jiang},
+publisher = {USENIX Association},
+month = aug,
+}
+
+@inproceedings {coz,
+author = {Charlie Curtsinger and Emery D. Berger},
+title = {{COZ}: Finding Code that Counts with Causal Profiling},
+booktitle = {2016 USENIX Annual Technical Conference (USENIX ATC 16)},
+year = {2016},
+address = {Denver, CO},
+url = {https://www.usenix.org/conference/atc16/technical-sessions/presentation/curtsinger},
+publisher = {USENIX Association},
+month = jun,
+}
+
+@misc{io-uring,
+    title={Ringing in a new asynchronous I/O API},
+    url={https://lwn.net/Articles/776703/},
+    author={Jonathan Corbet},
+    howpublished = "Linux Weekly News",
+    month        = "January",
+    year         = "2019",
+}
+
+
+@INPROCEEDINGS{retrace,
+    author = {Min Xu and Vyacheslav Malyugin and Jeffrey Sheldon and Ganesh Venkitachalam and Boris Weissman and Vmware Inc},
+    title = {Retrace: Collecting execution trace with virtual machine deterministic replay},
+    booktitle = {In Proceedings of the 3rd Annual Workshop on Modeling, Benchmarking and Simulation, MoBS},
+    year = {2007}
+}
+
+@INPROCEEDINGS{review-reverse-debugging,
+  author={Engblom, Jakob},
+  booktitle={Proceedings of the 2012 System, Software, SoC and Silicon Debug Conference}, 
+  title={A review of reverse debugging}, 
+  year={2012},
+  volume={},
+  number={},
+  pages={1-6},
+  doi={}}
+
+@inproceedings {panda,
+author = {David Devecsery and MIchael Chow and Xianzheng Dou and Jason Flinn and Peter M. Chen},
+title = {Eidetic Systems},
+booktitle = {11th USENIX Symposium on Operating Systems Design and Implementation (OSDI 14)},
+year = {2014},
+isbn = { 978-1-931971-16-4},
+address = {Broomfield, CO},
+pages = {525--540},
+url = {https://www.usenix.org/conference/osdi14/technical-sessions/presentation/devecsery},
+publisher = {USENIX Association},
+month = oct,
+}
+
+@inproceedings{r2,
+author = {Guo, Zhenyu and Wang, Xi and Tang, Jian and Liu, Xuezheng and Xu, Zhilei and Wu, Ming and Kaashoek, M. Frans and Zhang, Zheng},
+title = {R2: An Application-Level Kernel for Record and Replay},
+year = {2008},
+publisher = {USENIX Association},
+address = {USA},
+abstract = {Library-based record and replay tools aim to reproduce an application's execution by recording the results of selected functions in a log and during replay returning the results from the log rather than executing the functions. These tools must ensure that a replay run is identical to the record run. The challenge in doing so is that only invocations of a function by the application should be recorded, recording the side effects of a function call can be difficult, and not executing function calls during replay, multithreading, and the presence of the tool may change the application's behavior from recording to replay. These problems have limited the use of such tools.R2 allows developers to choose functions that can be recorded and replayed correctly. Developers annotate the chosen functions with simple keywords so that R2 can handle calls with side effects andmultithreading. R2 generates code for record and replay from templates, allowing developers to avoid implementing stubs for hundreds of functions manually. To track whether an invocation is on behalf of the application or the implementation of a selected function, R2 maintains a mode bit, which stubs save and restore.We have implemented R2 on Windows and annotated large parts (1,300 functions) of the Win32 API, and two higher-level interfaces (MPI and SQLite). R2 can replay multithreaded web and database servers that previous library-based tools cannot replay. By allowing developers to choose high-level interfaces, R2 can also keep recording overhead small; experiments show that its recording overhead for Apache is approximately 10%, that recording and replaying at the SQLite interface can reduce the log size up to 99% (compared to doing so at the Win32 API), and that using optimization annotations for BitTorrent and MPI applications achieves log size reduction ranging from 13.7% to 99.4%.},
+booktitle = {Proceedings of the 8th USENIX Conference on Operating Systems Design and Implementation},
+pages = {193–208},
+numpages = {16},
+location = {San Diego, California},
+series = {OSDI'08}
+}
+
+@misc{wpt,
+    title={web-platform-tests documentation},
+    howpublished={\url{https://web-platform-tests.org/}}
+    }
+
+@article{memcached,
+  author  = "Fitzpatrick, Brad",
+  title   = "Distributed Caching with Memcached ",
+  journal = "Linux Journal",
+  year    = 2004,
+}
+
+@misc{redis,
+    title={Redis},
+    howpublished={\url{https://redis.io/}}
+    }
+
+@inproceedings{crab-bypassing-lod-balancer,
+author = {Kogias, Marios and Iyer, Rishabh and Bugnion, Edouard},
+title = {Bypassing the Load Balancer without Regrets},
+year = {2020},
+isbn = {9781450381376},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3419111.3421304},
+doi = {10.1145/3419111.3421304},
+abstract = {Load balancers are a ubiquitous component of cloud deployments and the cornerstone of workload elasticity. Load balancers can significantly affect the end-to-end application latency with their load balancing decisions, and constitute a significant portion of cloud tenant expenses.We propose CRAB, an alternative L4 load balancing scheme that eliminates latency overheads and scalability bottlenecks while simultaneously enabling the deployment of complex, stateful load balancing policies. A CRAB load balancer only participates in the TCP connection establishment phase and stays off the connection's datapath. Thus, load balancer provisioning depends on the rate of new connections rather than the actual connection bandwidth. CRAB depends on a new TCP option that enables connection redirection. We provide different implementations for a CRAB load balancer on different technologies, e.g., P4, DPDK, and eBPF, showing that a CRAB load balancer does not require many resources to perform well. We introduce the connection redirection option to the Linux kernel with minor modifications, so that it that can be shipped with the VM images offered by the cloud providers. We show how the same functionality can be achieved with a vanilla Linux kernel using a Netfilter module, while we discuss how CRAB can work while clients and servers remain completely agnostic, based on functionality added on the host.Our evaluation shows that CRAB pushes the IO bottleneck from the load balancer to the servers in cases where vanilla L4 load balancing does not scale and provides end-to-end latencies that are close to direct communication while retaining all the scheduling benefits of stateful L4 load balancing.},
+booktitle = {Proceedings of the 11th ACM Symposium on Cloud Computing},
+pages = {193–207},
+numpages = {15},
+location = {Virtual Event, USA},
+series = {SoCC '20}
+}
+
+@inproceedings {pegasus,
+author = {Jialin Li and Jacob Nelson and Ellis Michael and Xin Jin and Dan R. K. Ports},
+title = {Pegasus: Tolerating Skewed Workloads in Distributed Storage with {In-Network} Coherence Directories},
+booktitle = {14th USENIX Symposium on Operating Systems Design and Implementation (OSDI 20)},
+year = {2020},
+isbn = {978-1-939133-19-9},
+pages = {387--406},
+url = {https://www.usenix.org/conference/osdi20/presentation/li-jialin},
+publisher = {USENIX Association},
+month = nov,
+}
+
+@inproceedings {prism,
+author = {Yutaro Hayakawa and Michio Honda and Douglas Santry and Lars Eggert},
+title = {Prism: Proxies without the Pain},
+booktitle = {18th USENIX Symposium on Networked Systems Design and Implementation (NSDI 21)},
+year = {2021},
+isbn = {978-1-939133-21-2},
+pages = {535--549},
+url = {https://www.usenix.org/conference/nsdi21/presentation/hayakawa},
+publisher = {USENIX Association},
+ month = apr,
+}
+
+@inproceedings {prism-irene,
+author = {Vladimir Olteanu and Alexandru Agache and Andrei Voinescu and Costin Raiciu},
+title = {Stateless Datacenter Load-balancing with Beamer},
+booktitle = {15th USENIX Symposium on Networked Systems Design and Implementation (NSDI 18)},
+year = {2018},
+isbn = {978-1-939133-01-4},
+address = {Renton, WA},
+pages = {125--139},
+url = {https://www.usenix.org/conference/nsdi18/presentation/olteanu},
+publisher = {USENIX Association},
+month = apr,
+}
+
+@inproceedings {beamer,
+author = {Vladimir Olteanu and Alexandru Agache and Andrei Voinescu and Costin Raiciu},
+title = {Stateless Datacenter Load-balancing with Beamer},
+booktitle = {15th USENIX Symposium on Networked Systems Design and Implementation (NSDI 18)},
+year = {2018},
+isbn = {978-1-939133-01-4},
+address = {Renton, WA},
+pages = {125--139},
+url = {https://www.usenix.org/conference/nsdi18/presentation/olteanu},
+publisher = {USENIX Association},
+month = apr,
+}
+
+@inproceedings{tcp-handoff98,
+author = {Pai, Vivek S. and Aron, Mohit and Banga, Gaurov and Svendsen, Michael and Druschel, Peter and Zwaenepoel, Willy and Nahum, Erich},
+title = {Locality-Aware Request Distribution in Cluster-Based Network Servers},
+year = {1998},
+isbn = {1581131070},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/291069.291048},
+doi = {10.1145/291069.291048},
+abstract = {We consider cluster-based network servers in which a front-end directs incoming requests to one of a number of back-ends. Specifically, we consider content-based request distribution: the front-end uses the content requested, in addition to information about the load on the back-end nodes, to choose which back-end will handle this request. Content-based request distribution can improve locality in the back-ends' main memory caches, increase secondary storage scalability by partitioning the server's database, and provide the ability to employ back-end nodes that are specialized for certain types of requests.As a specific policy for content-based request distribution, we introduce a simple, practical strategy for locality-aware request distribution (LARD). With LARD, the front-end distributes incoming requests in a manner that achieves high locality in the back-ends' main memory caches as well as load balancing. Locality is increased by dynamically subdividing the server's working set over the back-ends. Trace-based simulation results and measurements on a prototype implementation demonstrate substantial performance improvements over state-of-the-art approaches that use only load information to distribute requests. On workloads with working sets that do not fit in a single server node's main memory cache, the achieved throughput exceeds that of the state-of-the-art approach by a factor of two to four.With content-based distribution, incoming requests must be handed off to a back-end in a manner transparent to the client, after the front-end has inspected the content of the request. To this end, we introduce an efficient TCP handoflprotocol that can hand off an established TCP connection in a client-transparent manner.},
+booktitle = {Proceedings of the Eighth International Conference on Architectural Support for Programming Languages and Operating Systems},
+pages = {205–216},
+numpages = {12},
+location = {San Jose, California, USA},
+series = {ASPLOS VIII}
+}
+
+
+@inproceedings{demikernel,
+author = {Zhang, Irene and Raybuck, Amanda and Patel, Pratyush and Olynyk, Kirk and Nelson, Jacob and Leija, Omar S. Navarro and Martinez, Ashlie and Liu, Jing and Simpson, Anna Kornfeld and Jayakar, Sujay and Penna, Pedro Henrique and Demoulin, Max and Choudhury, Piali and Badam, Anirudh},
+title = {The Demikernel Datapath OS Architecture for Microsecond-Scale Datacenter Systems},
+year = {2021},
+isbn = {9781450387095},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3477132.3483569},
+doi = {10.1145/3477132.3483569},
+abstract = {Datacenter systems and I/O devices now run at single-digit microsecond latencies, requiring ns-scale operating systems. Traditional kernel-based operating systems impose an unaffordable overhead, so recent kernel-bypass OSes [73] and libraries [23] eliminate the OS kernel from the I/O datapath. However, none of these systems offer a general-purpose datapath OS replacement that meet the needs of μs-scale systems.' AB@This paper proposes Demikernel, a flexible datapath OS and architecture designed for heterogenous kernel-bypass devices and μs-scale datacenter systems. We build two prototype Demikernel OSes and show that minimal effort is needed to port existing μs-scale systems. Once ported, Demikernel lets applications run across heterogenous kernel-bypass devices with ns-scale overheads and no code changes.},
+booktitle = {Proceedings of the ACM SIGOPS 28th Symposium on Operating Systems Principles},
+pages = {195–211},
+numpages = {17},
+keywords = {datacenters, operating system, kernel bypass},
+location = {Virtual Event, Germany},
+series = {SOSP '21}
+}
+
+@inproceedings {caladan,
+author = {Joshua Fried and Zhenyuan Ruan and Amy Ousterhout and Adam Belay},
+title = {Caladan: Mitigating Interference at Microsecond Timescales},
+booktitle = {14th USENIX Symposium on Operating Systems Design and Implementation (OSDI 20)},
+year = {2020},
+isbn = {978-1-939133-19-9},
+pages = {281--297},
+url = {https://www.usenix.org/conference/osdi20/presentation/fried},
+publisher = {USENIX Association},
+month = nov,
+}
+
+@misc{libseccomp,
+    title={libseccomp Main Repository},
+    howpublished = {\url{https://github.com/seccomp/libseccomp}}
+}
+
+@manual{sud,
+ title      = "Sycall User Dispatch. The Linux kernel user's and adminitrator's guide",
+}
+
+@manual{ld,
+ title      = "ld.so(8) Linux Programmers's Manual",
+ year       = "2021",
+ month      = "August",
+}
+
+@manual{seccomp,
+ title      = "seccomp(2) Linux Programmers's Manual",
+ year       = "2021",
+ month      = "August",
+}
+
+@inproceedings{jockey,
+author = {Saito, Yasushi},
+title = {Jockey: A User-Space Library for Record-Replay Debugging},
+year = {2005},
+isbn = {1595930507},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/1085130.1085139},
+doi = {10.1145/1085130.1085139},
+abstract = {Jockey is an execution record/replay tool for debugging Linux programs. It records invocations of system calls and CPU instructions with timing-dependent effects and later replays them deterministically. It supports process checkpointing to diagnose long-running programs efficiently. Jockey is implemented as a shared-object file that runs as a part of the target process. While this design is the key for achieving Jockey's goal of safety and ease of use, it also poses challenges. This paper discusses some of the practical issues we needed to overcome in such environments, including low-overhead system-call interception, techniques for segregating resource usage between Jockey and the target process, and an interface for fine-grain control of Jockey's behavior.},
+booktitle = {Proceedings of the Sixth International Symposium on Automated Analysis-Driven Debugging},
+pages = {69–76},
+numpages = {8},
+keywords = {execution record and replay, debugging, Linux, keywords, jockey, checkpointing, x86},
+location = {Monterey, California, USA},
+series = {AADEBUG'05}
+}
+
+  
+
+@inproceedings{racepro,
+author = {Laadan, Oren and Viennot, Nicolas and Tsai, Chia-Che and Blinn, Chris and Yang, Junfeng and Nieh, Jason},
+title = {Pervasive Detection of Process Races in Deployed Systems},
+year = {2011},
+isbn = {9781450309776},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/2043556.2043589},
+doi = {10.1145/2043556.2043589},
+abstract = {Process races occur when multiple processes access shared operating system resources, such as files, without proper synchronization. We present the first study of real process races and the first system designed to detect them. Our study of hundreds of applications shows that process races are numerous, difficult to debug, and a real threat to reliability. To address this problem, we created RacePro, a system for automatically detecting these races. RacePro checks deployed systems in-vivo by recording live executions then deterministically replaying and checking them later. This approach increases checking coverage beyond the configurations or executions covered by software vendors or beta testing sites. RacePro records multiple processes, detects races in the recording among system calls that may concurrently access shared kernel objects, then tries different execution orderings of such system calls to determine which races are harmful and result in failures. To simplify race detection, RacePro models under-specified system calls based on load and store micro-operations. To reduce false positives and negatives, RacePro uses a replay and go-live mechanism to distill harmful races from benign ones. We have implemented RacePro in Linux, shown that it imposes only modest recording overhead, and used it to detect a number of previously unknown bugs in real applications caused by process races.},
+booktitle = {Proceedings of the Twenty-Third ACM Symposium on Operating Systems Principles},
+pages = {353–367},
+numpages = {15},
+keywords = {model checking, record-replay, race detection, debugging},
+location = {Cascais, Portugal},
+series = {SOSP '11}
+}
+
+  
+
+@misc{wine,
+title = {{Wine: Wine Is Not an Emulator }},
+howpublished = {\url{https://www.winehq.org/about}}
+}
+
+@misc{valve-proton,
+title = {{Proton: Compatibility tool for Steam Play based on Wine and additional components }},
+howpublished = {\url{https://github.com/ValveSoftware/Proton}}
+}
+
+@article{perfectDependencies,
+author = {Spall, Sarah and Mitchell, Neil and Tobin-Hochstadt, Sam},
+title = {Build Scripts with Perfect Dependencies},
+year = {2020},
+issue_date = {November 2020},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+volume = {4},
+number = {OOPSLA},
+url = {https://doi.org/10.1145/3428237},
+doi = {10.1145/3428237},
+abstract = {Build scripts for most build systems describe the actions to run, and the dependencies between those actions - but often build scripts get those dependencies wrong. Most build scripts have both too few dependencies (leading to incorrect build outputs) and too many dependencies (leading to excessive rebuilds and reduced parallelism). Any programmer who has wondered why a small change led to excess compilation, or who resorted to a clean step, has suffered the ill effects of incorrect dependency specification. We outline a build system where dependencies are not specified, but instead captured by tracing execution. The consequence is that dependencies are always correct by construction and build scripts are easier to write. The simplest implementation of our approach would lose parallelism, but we are able to recover parallelism using speculation.},
+journal = {Proc. ACM Program. Lang.},
+month = {nov},
+articleno = {169},
+numpages = {28},
+keywords = {build systems, functional programming}
+}
+
+@misc{tivo,
+  doi = {10.48550/ARXIV.1909.03111},
+  url = {https://arxiv.org/abs/1909.03111},
+  author = {Navarro Leija, Omar S and Jeffrey, Alan},
+  keywords = {Software Engineering (cs.SE), Distributed, Parallel, and Cluster Computing (cs.DC), FOS: Computer and information sciences, FOS: Computer and information sciences},
+  title = {Lightweight Record-and-Replay for Intermittent Tests Failures},
+  publisher = {arXiv},
+  year = {2019},
+  copyright = {arXiv.org perpetual, non-exclusive license}
+}
+
 @inproceedings{Belay:2012:DSU:2387880.2387913,
  author = {Belay, Adam and Bittau, Andrea and Mashtizadeh, Ali and Terei, David and Mazi\`{e}res, David and Kozyrakis, Christos},
  title = {Dune: Safe User-level Access to Privileged CPU Features},
@@ -34,17 +371,17 @@
  keywords = {abstract model, formal requirements, hypervisor, operating system, proof, sensitive instruction, third generation architecture, virtual machine, virtual machine monitor, virtual memory},
 }
 
-@url{google-bazel,
+@misc{google-bazel,
   title = {{Bazel}},
   howpublished = {\url{https://bazel.build/}},
 }
 
-@url{DRB,
+@misc{DRB,
   title = {{ReproducibleBuilds}},
   howpublished = {\\ \url{https://wiki.debian.org/ReproducibleBuilds}},
 }
 
-@url{reproducible-builds-org,
+@misc{reproducible-builds-org,
   title = {{Reproducible Builds Umbrella Project}},
   howpublished = {\url{https://reproducible-builds.org}},
 }
@@ -60,22 +397,22 @@ title = {{Windows Subsystem for Linux (WSL)}},
 howpublished = {\url{https://docs.microsoft.com/en-us/windows/wsl/about}}
 }
 
-@url{msft-rb,
+@misc{msft-rb,
   title = {{Why are the module timestamps in Windows 10 so nonsensical?}},
   author = {{Raymond Chen}},
   howpublished = {\url{https://blogs.msdn.microsoft.com/oldnewthing/20180103-00/?p=97705}},
 }
 
-@url{msft-deterministic-compiler,
+@misc{msft-deterministic-compiler,
   title = {{Deterministic builds in Roslyn}},
   author = {{Jared Parsons}},
   howpublished = {\url{http://blog.paranoidcoding.com/2016/04/05/deterministic-builds-in-roslyn.html}},
 }
-@url{intel-sdm,
+@misc{intel-sdm,
   title = {{Intel 64 and IA-32 Architectures Software Developer Manuals}},
   howpublished = {\url{https://software.intel.com/en-us/articles/intel-sdm}},
 }
-@url{reprotest,
+@misc{reprotest,
   title = {{Reprotest GitLab page}},
   howpublished = {\url{https://salsa.debian.org/reproducible-builds/reprotest}},
 }
@@ -87,30 +424,11 @@ howpublished = {\url{https://docs.microsoft.com/en-us/windows/wsl/about}}
 	year = {2008},
 	file = {VMware: VMware Workstation Zealot: Enhanced Execution Record / Replay in Workstation 6.5:/Users/devietti/Documents/bibliotheca/zotero/storage/ANGI4V22/enhanced-execut.html:text/html}
 }
-@url{pinplay,
+@misc{pinplay,
   title = {{Program Record/Replay Toolkit}},
   howpublished = {\url{https://software.intel.com/en-us/articles/program-recordreplay-toolkit}},
 }
-@article{Scott:2017:MCD:3152284.3133897,
- author = {Scott, Ryan G. and Navarro Leija, Omar S. and Devietti, Joseph and Newton, Ryan R.},
- title = {Monadic Composition for Deterministic, Parallel Batch Processing},
- journal = {Proc. ACM Program. Lang.},
- issue_date = {October 2017},
- volume = {1},
- number = {OOPSLA},
- month = oct,
- year = {2017},
- issn = {2475-1421},
- pages = {73:1--73:26},
- articleno = {73},
- numpages = {26},
- url = {http://doi.acm.org/10.1145/3133897},
- doi = {10.1145/3133897},
- acmid = {3133897},
- publisher = {ACM},
- address = {New York, NY, USA},
- keywords = {Haskell, concurrency, deterministic parallelism},
-}
+
 @article{Dunlap:2002:REI:844128.844148,
  author = {Dunlap, George W. and King, Samuel T. and Cinar, Sukru and Basrai, Murtaza A. and Chen, Peter M.},
  title = {ReVirt: Enabling Intrusion Analysis Through Virtual-machine Logging and Replay},
@@ -146,27 +464,27 @@ howpublished = {\url{https://docs.microsoft.com/en-us/windows/wsl/about}}
  address = {New York, NY, USA},
  keywords = {ReVirt, Xen, determinism, direct memory access, execution replay, hardware page protections, multiprocessors, multithreading, virtual machines},
 }
-@url{tar-clamp-mtime,
+@misc{tar-clamp-mtime,
   year = {2015},
   month = {June},
   day = {29},
   title = {{tar: please add --clamp-mtime to only update mtimes after a given time}},
   howpublished = {\url{https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=790415}.}},
 }
-@url{strip-nondeterminism,
+@misc{strip-nondeterminism,
   title = {{strip-nondeterminism Debian Package Description}},
   howpublished = {\url{https://packages.debian.org/sid/strip-nondeterminism}},
 }
-@url{drb-unrepro,
+@misc{drb-unrepro,
   title = {{Packages in Stretch/Amd64 Which Failed to Build Reproducibly}},
   howpublished = {\url{https://tests.reproducible-builds.org/debian/stretch/amd64/index_FTBR.html}},
 }
-@url{drb-1year,
+@misc{drb-1year,
   title = {{Reproducible Builds for Debian, a year later}},
   author = {{Jeremy Bobbio}},
   howpublished = {\url{https://summit.debconf.org/debconf14/meeting/78/reproducible-builds-for-debian/}},
 }
-@url{tsx-disable,
+@misc{tsx-disable,
   title = {{Intel Xeon Processor E3-1200 v3 Product Family}},
   year = {2018},
   month = {July},
@@ -181,12 +499,12 @@ Behavior}},
  title = {{Breaking the x86 Instruction Set}},
  note = {\url{https://www.youtube.com/watch?v=KrksBdWcZgQ}}
 }
-@url{github-tf-irrepro,
+@misc{github-tf-irrepro,
 	title = {{Problems Getting TensorFlow to behave Deterministically}},
 	author = {{Daniel Maskit}},
 	howpublished = {\url{https://github.com/tensorflow/tensorflow/issues/16889}}
 }
-@url{pedl,
+@misc{pedl,
 	title = {{Reproducibility in ML: why it matters and how to achieve it}},
 	author = {{Jennifer Villa and Yoav Zimmerman}},
 	howpublished = {\url{https://determined.ai/blog/reproducibility-in-ml/}},
@@ -194,7 +512,7 @@ Behavior}},
 	month = {May},
 	day = {25}
 }
-@url{repro-ml-workshop,
+@misc{repro-ml-workshop,
 	title = {{Reproducibility in Machine Learning: An ICLR 2019 Workshop}},
 	author = {{Rosemary Nan Ke and Alex Lamb and Olexa Bilaniuk and Anirudh Goyal and Yoshua Bengio}},
 	howpublished = {\url{https://sites.google.com/view/icml-reproducibility-workshop/home}}
@@ -245,7 +563,7 @@ Behavior}},
 	address = {New York, NY, USA},
 	keywords = {localization, software maintenance, unreproducible build},
 }
-@url{tf-models-tutorials,
+@misc{tf-models-tutorials,
 	title = {{Models and examples built with TensorFlow}},
 	author = {{tensorflow}},
 	howpublished = {\url{https://github.com/tensorflow/models/tree/master/tutorials/image}},
@@ -3646,7 +3964,7 @@ pages={224 -235},
  address = {Washington, DC, USA},
 }
 
-@url{luajit,
+@misc{luajit,
   title = {The {LuaJIT} project, homepage},
   howpublished = {\url{http://luajit.org/}}
 }
@@ -3702,7 +4020,7 @@ ISSN={},}
  keywords = {execution model, model of computation, paralleX},
 }
 
-@url{cloudera-crunch,
+@misc{cloudera-crunch,
  title = {Introducing {C}runch: Easy {MapReduce} Pipelines for {H}adoop},
  howpublished = {\url{http://www.cloudera.com/blog/2011/10/introducing-crunch/}},
 }
@@ -4404,7 +4722,7 @@ note={\url{http://www.mpi-forum.org/docs/mpi-2.2/mpi22-report.pdf}}
   url = {\url{http://www.snet-home.org/}}
 }
 
-@url{scala-akka,
+@misc{scala-akka,
  title = "Scala {A}kka actor communication library.",
  howpublished={\url{http://akka.io/}},
 }
@@ -4443,7 +4761,7 @@ note={\url{http://www.mpi-forum.org/docs/mpi-2.2/mpi22-report.pdf}}
  keywords = {compare_and_swap, concurrent queue, lock-free, multiprogramming, non-blocking},
 }
 
-@url{accelerate-cuda-repo,
+@misc{accelerate-cuda-repo,
   title = {{Accelerate CUDA Backend, repository}},
   howpublished={\url{https://github.com/AccelerateHS/accelerate}},
 }
@@ -4451,27 +4769,27 @@ note={\url{http://www.mpi-forum.org/docs/mpi-2.2/mpi22-report.pdf}}
 % @Comment wide area ganglia
 % @Comment http://ganglia.sourceforge.net/papers/Sacerdoti03Monitoring.pdf
 
-@url{ee-times-article,
+@misc{ee-times-article,
  title = {{MIT} Professor uses {ESL} tools and {FPGA}s to teach system architecture},
  howpublished={\url{http://www.eetimes.com/design/programmable-logic/4218264/MIT-Professor-uses-ESL-tools-and-FPGAs-to-teach-system-architecture}},
 }
 
-@url{bloomington-at-the-center-article,
+@misc{bloomington-at-the-center-article,
   title = {{Bloomington at the Center of School Reform Movement}},
   howpublished = {\url{http://www.harmonyeducationcenter.org/happenings1b.html}},
 }
 
-@url{oreilly-haskell,
+@misc{oreilly-haskell,
   title={Parallel and Concurrent {H}askell, {O'R}eilly book announced},
   howpublished={\url{http://www.haskell.org/pipermail/haskell/2012-May/023328.html}}
 }
 
-@url{twitter-storm,
+@misc{twitter-storm,
   title = {Twitter-Storm blog post},
   howpublished = {\url{http://engineering.twitter.com/2011/08/storm-is-coming-more-details-and-plans.html}},
 }
 
-@url{scotch-website,
+@misc{scotch-website,
   title = {{SCOTCH} project homepage},
   howpublished = {\url{http://www.labri.fr/perso/pelegrin/scotch/}},
 }
@@ -4560,7 +4878,7 @@ ISSN={ },}
     pages = {1123--1134}
 }
 
-@url{streambase,
+@misc{streambase,
   title = {{StreamBase Systems}},
   howpublished = {\url{www.streambase.com/}},
 }
@@ -4706,7 +5024,7 @@ ISSN={ },}
  address = {New York, NY, USA},
 }
 
-@url{intel-jamuir-paper,
+@misc{intel-jamuir-paper,
   title = {Using the {RDTSC} Instruction for Performance Monitoring},
   howpublished={\url{http://www.ccsl.carleton.ca/~jamuir/rdtscpm1.pdf}},
 }
@@ -4741,7 +5059,7 @@ ISSN={ },}
   publisher={Elsevier}
 }
 
-@url{cmu-course,
+@misc{cmu-course,
    title = {Course homepage: 15-150: Functional Programming},
    howpublished = {\url{http://www.cs.cmu.edu/~15150/}},
 }
@@ -4830,7 +5148,7 @@ ISSN={ },}
  address = {Washington, DC, USA},
 }
 
-@url{guillherme-report,
+@misc{guillherme-report,
   title={Final Project Report: Benchmarking Intra-Node Data Transfers},
   author = {Guilherme Fernandes and Ahmed El-Hassany},
   howpublished={\url{http://www.cs.indiana.edu/~rrnewton/B629/ProducerConsumerReport.pdf}},
@@ -8961,7 +9279,7 @@ publisher = {{USENIX} Association},
 	primaryClass={cs.PL}
 }
 
-@url{mozilla-rr-website,
+@misc{mozilla-rr-website,
   author = "Mozilla",
   title = "rr: lightweight recording \& deterministic debugging",
   year = "2015",
@@ -9147,14 +9465,14 @@ URL = {http://dx.doi.org/10.1093/nar/gkg500},
  keywords = {Language-Based Security, Points-to Analysis, APIs, Javascript},
 }
 
-@url{adsafe,
+@misc{adsafe,
  author = {Douglas Crockford},
  title = {ADsafe: Making JavaScript Safe for Advertising},
  howpublished = {\url{http://www.adsafe.org/}},
  year = {2008}
 }
 
-@url{nix,
+@misc{nix,
   author = "Nix",
   title = "Nix: The Purely Functional Package Manager",
   year = "2015",
@@ -9289,31 +9607,21 @@ URL = {http://dx.doi.org/10.1093/nar/gkg500},
  keywords = {accountability, byzantine faults, distributed systems, fault detection},
 } 
 
-@url{pachyderm-website,
+@misc{pachyderm-website,
   title = {{Pachyderm} reproducible data science homepage},
   howpublished = {\url{https://www.pachyderm.io}},
 }
 
-@url{codeocean-website,
+@misc{codeocean-website,
   title = {{Code Ocean} homepage},
   howpublished = {\url{https://codeocean.com}},
 }
 
-
-@inproceedings {rr,
-author = {Robert O{\textquoteright}Callahan and Chris Jones and Nathan Froyd and Kyle Huey and Albert Noll and Nimrod Partush},
-title = {Engineering Record and Replay for Deployability},
-booktitle = {2017 {USENIX} Annual Technical Conference ({USENIX} {ATC} 17)},
-year = {2017},
-isbn = {978-1-931971-38-6},
-address = {Santa Clara, CA},
-pages = {377--389},
-url = {https://www.usenix.org/conference/atc17/technical-sessions/presentation/ocallahan},
-publisher = {{USENIX} Association},
-month = jul,
+@misc{servo,
+    title={Servo, the Parallel Browser Engine Project},
+    howpublished={\url{https://servo.org/}},
+    journal={Mozilla}
 }
-
-@misc{servo, title={Servo, the Parallel Browser Engine Project}, url={https://servo.org/}, journal={Mozilla}}
 
 @inproceedings{gaw_secrecy_2006,
 	address = {New York, {NY}, {USA}},

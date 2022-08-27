@@ -1,1 +1,82 @@
+
 \chpt{Capybara: Low-Latency Live TCP Connection Migration}
+n this work, we present Capybara. A system for live TCP connection migration.
+\section{Motivation}
+- Datacenter Latency Sensitive Applications
+- Load balancing
+\section{Background}
+\subsection{Kernel Bypass IO}
+Recent advancements in hardware as well as demand from datacenters have brought a new generation of technologies into the OS and networking space. Among this changes are a class of technilogies known as kernel-bypass IO.
+
+Network IO is classically done via system calls into the OS kernel. System calls incur slight overhead as a mode switch is required to go into kernel space. As datacenter applications have become IO bound the have also become IO sensitive. This has become a large percentage of the cost for some applications. For example, in-memory key value stores like Redis \cite{redis} and Memcached \cite{memcached}.
+\subsection{Programmable Switches}
+For latency-critical application, like those found in the datacenter, 
+\subsection{Demikernel}
+\subsection{TCP Connections}
+\subsection{Load Balancing}
+
+\section{Live TCP Connection Migration}
+This work is a direct successor to Prism \cite{prism}. Prism shows the feasibility of migrating TCP connection between backend servers.
+
+Capybara reimplements the TCP handoff protocol introduced in Prism, but in a novel context: the kernel-bypass network IO.
+
+This has the following advantages of Prism:
+- We control the userspace network stack. Prism requires network support 
+
+- P4
+- Fast
+- No need to change protocol
+- Dynamic Load Balancing
+
+\section{Capybara Design}
+In this section we present our design for live TCP connection migration. We strive to make this migration as general as possible as to support a wide range of usescases.
+
+We strive to make as few assumptions about the datacenter network topology as possible. We consider a connection made between a client and a server application. This connection will be migrated from an origin machine to a destination machine. The network traffic between the client, origin machine, and destination machine is mediated by a programmable P4 switch. Both origin and destination machines have DPDK-supported NICs and run instances of the Catnip network stack.
+
+\subsection{Migration Outline}
+Migration Outline
+
+Definitions
+P is a server application modified to use Catnip for low-latency kernel-bypass networking. One instance of P runs per machine M.
+M is a machine involved in live TCP Migration. Either the origin or the destination.
+C is the current TCP Connection we want to migrate.
+B is a TCP (or UDP?) connection between the origin and destination. This connection is used exclusively for migrating network connections in/out. Applications are expected to poll this connection frequently to accept incoming migrating connections. Every instance has this connection between each other.
+
+Outline
+The origin decides to migrate an existing connection to a destination instance.
+The origin concurrently:
+Reroute Traffic
+Messages the switch asking it to reroute packets of connection C to the destination. 
+1) Serialize Connection
+Calls into Catnip via the `migrate\textunderscore{}connection\textunderscore{}out` method. This has the following effects:
+This connection gets tagged as `ConnectionMigratedOut`.
+Additional packets for this connection are buffered by Catnip.
+`migrate\textunderscore{}connection\textunderscore{}out` returns `ConnectionState`, the serialized state of the specified connection.
+2) Migrates connection state
+The origin uses B to send over the state of the connection to the destination.
+The destination receives the incoming `ConnectionState` by polling B. It uses the `ConnectionState` to establish a new connection by calling into Catnip via `migrate\textunderscore{}connection\textunderscore{}in`. C is put in a special state `ConnectionMigratedIn`. This has the following effect:
+Incoming packets will have an IP address different from the machine’s IP address. This is okay, Catnip rewrites/ignores the IP address for this connection.
+Outgoing packets have their source IP address rewritten to that of the origin.
+The destination sends the origin instance an END message via B. This has two effects:
+The origin sends the destination any remaining buffered packets for C.
+The origin removes any remaining state from its stack related to C.
+The destination receives any buffered packets from O.
+The connection is now fully migrated.
+
+
+\subsection{Migration-aware applications}
+\subsection{Migration mechanism orthogonal from migration trigger}
+\subsection{Handling Program State}
+
+\section{Implementation}
+Capybara is implemented on top of the Demikernel.
+
+DPDK
+RDMA
+P4 Communication
+\section{Ongoing Work}
+- This is ongoing work.
+
+\subsection{Evaluation}
+\section{Related Work}
+- Caladan

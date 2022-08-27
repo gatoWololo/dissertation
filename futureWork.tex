@@ -1,10 +1,11 @@
+\newcommand{\ldpreload}{LD\textunderscore PRELOAD}
 \chpt{Future Work}
 
 \section{ChaOS}
 
 \subsection{Introduction}
-C and C++ remain the most popular languages for writing systems software. The Linux programming interface is defined entirely in C. So using many Linux faculties requires using these C interfaces. Meanwhile, the C type system is relatively weak and unexpressive. So instead of function invariants being expressed via types, where they can be machine checked, they are relegated deep into the man pages as documentation. Furthermore, C does not feature any language-level error handling support. So C programmers often implement their own ad-hoc error handling boilerplate. Without language or compiler support, C error handling is tedious and error prone. Testing these error handlers is also difficult or sometimes impossible. The lack of error handling support from the C language, combined with the relative rarity of specific system calls failing may lead to hard to find bugs.
-To address these shortcomings we propose ChaOS, a testing framework for system call failures. ChaOS injects faults at system call sites to automatically root out bugs in software caused by unhandled or buggy system call error handlers.
+C and C++ remain the most popular languages for writing systems software. The Linux programming interface is defined entirely in C. So using many Linux APIs requires using these C interfaces. Meanwhile, the C type system is relatively weak and unexpressive. So instead of function invariants being expressed via types, where they can be machine checked, they are relegated deep into the man pages as documentation. Furthermore, C does not feature any language-level error handling support. So C programmers often implement their own ad-hoc error handling boilerplate. Without language or compiler support, C error handling is tedious and error prone. Testing these error handlers is also difficult or sometimes impossible. The lack of error handling support from the C language, combined with the relative rarity of specific system calls failing may lead to hard to find bugs.
+To address these shortcomings we propose ChaOS, a testing framework for system call failures. ChaOS injects faults at system call sites to automatically root out bugs in software caused by unhandled or buggy system call error handlers. This work is inspired by previous work on dynamic analysis \cite{coz}, fuzzing \cite{afl, fuzz-scheduler}, and debugging error handling code \cite{fuzzing-error-handling}.
 Working at the system call level allows us to leverage low-level properties of programs in a novel way. Finally, we leverage our insights on deterministic code execution to develop a fast and sound approach.
 
 \subsection{Background}
@@ -17,7 +18,7 @@ System calls failures are reported via the integer return value of the function 
 \label{blockingandsignals}
 One example of this complicated design is blocking system calls. Any blocking system call can be interrupted at any time by a signal: for example, when a user asks the program to momentarily suspend, or any time a child process exits, a signal is delivered. If this happens, the system call returns with a \texttt{EINTR}, and the user is expected to restart the system call by calling it again. This is an unfortunate design quirk of Linux. So in practice, any program that performs a blocking system call must be ready to handle a signal interrupting a system call at any time. Anecdotally, it seems difficult to believe most developers handle this correctly. Even high-level languages like Python have not always handled this behavior correctly \cite{pep}. Thus we believe blocking system calls interrupted by signals are an ideal test target for programs.
 
-\subsubsection{Ptrace}
+\subsubsection{Ptrace} \label{sec:ptrace-summary}
 Ptrace is a Linux mechanism for tracing the execution of another program. Ptrace     is powerful enough to implement debuggers like GDB and system call tracing utilities     like strace. Ptrace allows one process, the tracer, to trace the execution of possibly     many processes or threads, the tracees. A tracee executes until some event specified by the tracer occurs. On such an event the tracee is stopped and the tracer receives an event message from the OS. Possible events include: system call execution, instruction execution, process spawn, process calls execve, and process exit, and more.
 
 While the tracee is stopped, the tracer can read and write to arbitrary memory and registers of the tracee. There are two system call interception events:
@@ -61,3 +62,170 @@ While my personal opinion is that programs should handle even seemingly impossib
 
 \subsection{Evaluation}
 We will execute Chaos on a wide array of C programs. We are particularly interested in targeting systems which are expected to have high reliability and robustness to exceptional circumstances, such as databases and userspace filesystems. We hope to discover and validate many real bugs with this approach.
+
+\section{Better System Call Interposition Mechanisms}
+In this section I argue the need for better system call interposition (interception) mechanisms.
+
+\subsection{Use Cases}
+System call interception is useful for various cases. Previous work utilities system call tracing to: guarantee determinitic execution of batch processing \citep{detflow},  precisely determining build dependencies \citep{perfectDependencies}, and finding process races \citep{racepro}. System call interposition can emulate system call executions. For example, by intercepting Windows API calls, systems like Wine \citep{wine} and Proton \citep{valve-proton} allow native Windows applications to run unmodified in a POSIX environment. Combining system call tracing, emulation, and modification allows us to be useful low-level systems. By intercepting, emulating, and modifying non-deterministic system calls, Dettrace \citep{dettrace} provides a deterministic container abstraction where any binary executed inside the container is guaranteed to be deterministic. ProcessCache (\ref{chap:processCache}) allows for automatic caching and skipping of redundant process execution, when none of the inputs to the computation have changed.
+
+\subsection{Current Approaches}
+Here we compare three popular approaches to Linux system call interposition: \ldpreload, ptrace, and in-kernel.
+
+\subsubsection{\ldpreload{}}
+\ldpreload{} is an Linux environment variable specifying ELF shared objects to be loaded before all others \cite{ld}. This can be used to override functions which are dynamically linked into a program. For example, we want to to trace every use of the \code{open} standard C library function in some program \code{./foo}. The \code{open} function is dynamically loaded into \code{./foo} via the shared object \code{libc.so}. We can create our own shared object, e.g. \code{tracing.so} which defines an \code{open} function with the same signature as the standard library version. Our new \code{open} function can execute arbitrary code to book-keep the number of function invocations, before executing the actual \code{open} system call.
+
+Our tracing code can be injected by executing: \code{\ldpreload=tracing.so ./foo}. In this section, we will use the term \ldpreload as a shorthand for the \ldpreload injection approach.
+
+There are several advantages to \ldpreload{} that make it widely used (even though it suffers from fatal drawbacks):
+\begin{compactitem}
+    \item \textbf{Ease of use}: it is straightforward to get something basic working quickly.
+    \item \textbf{Familiarity}: The user is more likely to be familiar with C standard library functions and the Linux programming interface. This provides a familiar programming model for users.
+    \item \textbf{Source/Binary Requirements}: \ldpreload{} does not require any source code changes, recompilation, and will work on unmodified code. Only a dynamically linked binary is required.
+    \item \textbf{Performance}: \ldpreload{} add no additional overhead beyond any custom code injected by the user. Our custom functions work just like any other dynamically loaded function invocation. This code is executed directly in the process address space and requires no additional context switches or system calls.
+\end{compactitem}
+
+I believe the \ldpreload{} approach should be avoided in every but the most trivial use-cases as it suffers from several issues:
+\begin{compactitem}
+    \item \textbf{Mismatch between C standard library and systems calls}: C standard library functions like \code{open}, \code{printf}, \code{fork} are casually referred to as system calls. This is inaccurate and can lead to issues in situations with \ldpreload{}. These functions should be thought of more as high-level\footnote{"High-level" being a relative term in this context.} wrappers around actual OS system calls. For example, the \code{printf} function eventually calls the \code{write} system call.
+    
+    The C standard library often provides various convenience functions which all eventually call the same system call. We must ensure we are intercepting all such functions.
+    \item \textbf{Statically Linked Binaries}: \ldpreload{} only works for functions which are
+    dynamically linked. If we are dealing with a statically linked binary, this approach will not work at all.
+    \item \textbf{Use of C Standard Library}: \ldpreload hinges on the erroneous assumption that languages and runtimes are implemented on top of the C standard library and \code{libc.so}. Go programs cannot be traced using \ldpreload{} since the Go runtime calls system calls directly instead of using \code{libc.so}. Additionally, any code that calls system calls directly, e.g. via assembly, will not be traced by \ldpreload.
+\end{compactitem}
+
+These issues mean \ldpreload{} is not a full-proof approach and its tracing may be missing system calls.
+
+\subsubsection{Ptrace} \label{sec:ptrace-tradeoffs}
+Please see Section \ref{sec:ptrace-summary} for an overview of the Linux ptrace API. ptrace provides the following advantages:
+\begin{compactitem}
+    \item \textbf{OS-Based Interception}: The OS handles interception of system calls and other IO events. This provides a full-proof approach which cannot be circumvented by programs.
+    \item System Call Interface: Ptrace works at the system call level, the lowest layer
+    for userspace programs. So ptrace works regardless of the language, technology, or runtime of the program\footnote{One notable exception is VDSO system calls, in practice this is not a major issue.}.
+   \item \textbf{System call filtering}: Ptrace allows us to filter only those system calls we are interested in. The overhead of ptrace is proportional to the number of IO events intercepted \cite{dettrace}. Filtering allows us to specify the minimal set of system calls required for our use case. 
+    \item \textbf{Beyond System Calls}: Ptrace notifies us of IO events beyond just system calls. These events include: signals, process/thread spawn and exit, and calls to execve. These additional events are useful for program tracing.
+    \item \textbf{Process Manipulation}: ptrace provides powerful process manipulation mechanisms. Ptrace allows for arbitrary reads and writes to the memory of the tracee. System calls may be emulated, substituted, injected, or modified by the tracer.
+    \item \textbf{Dynamic Attachment and Detachment}: Ptrace allows the tracer to attach to arbitrary processes at any time. This is useful for tracing already running processes. Tracers may attach or detach dynamically to processes. This is in contrast to \ldpreload which requires attaching at program execution time.
+    \item \textbf{Centralized Tracing}: A single tracer may trace an arbitrary number of threads and processes. This is useful when tracing multi-threaded or multi-processed programs. We can have a single centralized tracer which aggregates information from multiple tracees.
+\end{compactitem}
+
+Ptrace has several issues:
+\begin{compactitem}
+    \item \textbf{Complicated API and Setup}: Ptrace's API and setup are difficult. This is most likely due to the complexity of the system call, and the archaic feel of many parts of Linux. There is also a general lack of documentation: The \code{man} page is not beginner friendly. All ptrace examples available on the web are simple and only handle the most trivial tracing needs.
+    
+    Ptrace must be used in conjunction with seccomp \cite{seccomp} to support system call filtering. This adds to the complexity. Even a minimal working ptrace + seccomp program requires a few hundred lines of boilerplate.
+    
+    \item \textbf{Low-Level Interface}: Ptrace requires knowledge of low-level program execution, specifically: familiarity with the Linux programming interface, systems programming, and the Linux system call ABI.
+    
+    To trace system calls events, we must first perform a \code{PTRACE\textunderscore{}GETREGS} operation. This operation populates a struct representing the register state of the tracee. This struct consists of untyped values represented as 64-bit integers. Interpreting this struct requires knowledge of that specific system call's API and the Linux system call ABI \footnote{Notice the function signature between a C standard library wrapper and the system call API often differs in subtle ways.}. The register values should then best reinterpreted as data or pointers via a cast. These pointers refer to the tracee's address space, but can be dereferenced via \code{PTRACE\textunderscore{}PEEK} or the \code{process\textunderscore{}vm\textunderscore{}read} system call. This is nontrivial and likely beyond the skill of most non-systems programmers. 
+    
+    \item \textbf{Difficult Programming Model}: Ptrace (ab)uses the parent-child process relationship. Under the hood, a tracer becomes the parent of a tracee process. This enables the use of \code{waitpid} to receive notification of incoming ptrace IO events.
+    
+    Multiple tracees (additional threads or processes traced by our tracer) could be running in parallel. This is beneficial to amortize the overhead of ptrace, as we can serve events from one tracee while waiting for events from another. Therefore, ptrace IO event can arrive from any tracee at any given time.
+    
+    Often it is useful to handle systems call events atomically. Consider the following example: We want to keep track of all file deletion events by a tracee, and we want to know the inodes of deleted files. To implement this with ptrace we would execute the following operations:
+    \begin{enumerate}
+    \item Intercept call to the \code{unlink} system call prehook.
+    \item Read the first argument to \code{unlink} as a string. This is the path of the file to be deleted.
+    \item Before allowing the \code{unlink} through, we inject a \code{stat} system call into the tracee to get the inode for this file \footnote{We must do this before the \code{unlink}, if the file is deleted, it will be too late for us to read the inode!}.
+    \item Await for the posthook of \code{stat}.
+    \item Allow the \code{unlink} to execute.
+    \item Await the posthook for \code{unlink} to observe the return value.
+    \end{enumerate}
+    
+    Logically, this operations happen sequentially. We would like our code to reflect this. However, steps 3 and 6 require awaiting for posthook events. We could have arbitrarily many ptrace IO events from other tracees before the posthook events arrive. Ptrace does not allow us to wait for this specific event, we must serve events in their arrival order \footnote{We could instruct \code{waitpid} to wait on the PID/TID of this specific tracee, but then we cannot serve IO events which are ready from other tracees.}.
+    
+    This is a real example from the Dettrace project. Dettrace handles this problem by having a per-tracee local state. On every IO event, we pop the corresponding state for that thread or process. Any time we are\code{await}ing a specific IO event, we save the state for that tracee; In anticipation for receiving a IO event from a different tracee. While this approach worked, it was error prone as it was up to the user to ensure they pushed/popped the state. It also broke the sequential logical workflow of this operation. Futhermore, we could not factor out this code as a function, as we needed to return to the main IO event handler loop at any time.
+    
+    Lastly, ptrace does not keep track of pre-hook and post-hook events per process or threads. It is up to the tracer (us) to manually remember the state of the tracee. The tracer may become desynchronized on the current ptrace event. This happens when the programmer has different expectations of what the next event should be, most commonly pre-hook and post-hook events. This leads to hard to diagnose, and unhelpful  ptrace IO errors \footnote{The OS knows the current ptrace IO event we are handling, it is not clear why it does include pre-hook or post-hook information}.
+
+    \item \textbf{High Overhead}: Ptrace works on a tracer/tracee model. The tracer runs as a separate process which awaits new notifications from the OS. Every time a relevant tracing events is executed, the tracee is put in a stopped state. Communicating between two processes in this manner incurs considerable overhead. Ptrace's overhead is directly proportional to the number of IO events intercepted \cite{dettrace}. Tracing IO-bound workloads can incur many times the overhead from baseline. CPU-bound workloads can execute as as quickly as 1\%-2\% the overhead.
+    \item \textbf{Expensive IO}: Beyond the cost of stopping the tracee and context switching to the tracer. Most ptrace operations require a system call for reading the state or memory of the tracee. Such as reading or writing to the register state, which is necessary to introspect the system call state. Since the tracer operates on a different address space as the tracer dereferncing any pointer requires further ptrace system calls. This IO likely accounts for a significant portion of ptrace's overhead.
+\end{compactitem}
+
+\subsubsection{Kernel}
+Previous work \cite{arnold, racepro} opts to trace in-kernel. These systems are making OS modifications beyond just tracing, so the kernel is a natural place for tracing system call events. This approach is quite fast, we have to enter kernel-space to service the system call anyways, so there is no additional overhead beyond any custom code that must be executed.
+
+The kernel-modification approach comes with significant drawbacks:
+
+\begin{compactitem}
+    \item Kernel modifications are an intrusive change to any OS. For security and stability reasons, it is unlikely a modified kernel will be used in production systems. The majority of proposals are unlikely to be merged into the mainline Linux kernel. If a project relies on the low-overhead of an in-kernel implementation, their approach may never be useful in production. Rendering the viability of their research questionable.
+    \item This approach relies on the internal kernel code instead of going through a public API. This approach usually pins the code to a specific kernel version. The code quickly becomes outdated as new kernel versions make changes to these internals.
+    \item Kernel programming is a highly-specialized skill event among systems programmers and operating systems researchers. Most people, including myself, lack the deep domain knowledge for this approach.
+\end{compactitem}
+
+\subsection{Designing Better Systems}
+Given the issues with existing approaches, I believe there is a need for better mechanisms to fill this niche. In this sections I outline some features a better system call interposition mechanism would have, as well as current work in this area.
+
+\subsubsection{Next Generation Tracing}
+In this section I outline the requirements and features a next generation solution should implement.
+\begin{compactitem}
+\item \textbf{Better Abstractions}: I argue that system calls are actually the wrong level of abstraction for tracing mechanisms. System calls are an implementation detail of executing programs. I believe most users are interested in tracing higher level IO operations of programs. For example, instead of knowing the tracee executed a \code{open} system call with a certain set of flags, the user would rather work with a higher level concepts such as a \code{FileOpened} operation. There are many system calls which perform similar operations depending on the arguments, e.g. \code{open} with the \code{O\textunderscore{}}, \code{opentat}, \code{opentat2}, \code{creat}. Most users care less about the exact system call and more about the IO event, e.g. \code{FileCreated}. \pc \ref{chap:processCache} implements this concepts in-code to abstract over raw system call events. 
+\item \textbf{Portability}: An ideal solution would be portable across different operating systems. This is probably the hardest feature to have. Different OS have different system calls making this infeasible. Using an intermediate, higher abstracted representation as described in the former bullet point would make this feasible.
+\item \textbf{Low-Overhead}: Overhead is an important factor for the feasibility of techniques built on top of system call interposition. A full-proof and low-overhead tracing would be be the best of all worlds. I believe such a system would require a userspace and in-process approach. We already see this trend on other areas of OS evolution \cite{demikernel}, and I believe tracing should be done in userspace without the cost of the OS.
+\item \textbf{Programming Model}: As described in the Section \ref{sec:ptrace-tradeoffs}, the current ptrace programming model is difficult and error prone. A more intuitive programming model could help cut through the complexity. Asynchronous programming has been popularized in recent years. I believe a asynchronous IO API is an excellent programming model for IO event tracing. See Section \ref{sec:betterPtrace} for a detailed description.
+\end{compactitem}
+
+\subsubsection{Syscall User Dispatch}
+Progress is being made in this area. Linux now supports Syscall User Dispatch (SUD) \cite{sud}.
+Syscall User Dispatch is designed mainly to handle the use case of Wine and Proton: emulating system calls for a certain region of the process' address space. SUD allows filtering, trapping, and emulating system calls in userspace. SUD utilities a "selector" byte mapped to the application's memory. This allows for quick enable/disable of system call redirection via a write to memory. Notice this write does not require a mode switch to kernel space. When the selector is enabled, any system call performed in the application will generate a SIGSYS signal, which can be caught and handled in-process. 
+
+Additionally, SUD alows us to specify memory regions where any system call executed will not be intercepted, regardless of the state of the selector. This is useful for allowing fast system call execution, e.g. mapping libc into this memory region.
+
+I believe the SUD mechanism could be used to engineer a faster system call interception mechanism than those currently available. SUD would not suffer from the shortcomings of other approaches. I expected the overhead to be low, as it works in-process. According to the documentation \cite{sud}, handling signals on most architectures incurs a high cost but I expect this approach to be faster than other full proof solutions, i.e. ptrace. A SUD-based approach would work for all systems unlike the  \ldpreload{} approach. Reading and writing to the tracee's address space would be as fast as a pointer derefernce since the tracer lives the same address space as the tracee.
+
+Note, this approach would not be suitable for sandboxing or hardening environments, as the tracee runs in the same address space as the tracee.
+
+\subsubsection{Higher-Level Tracer On Top of Ptrace} \label{sec:betterPtrace}
+We don't need a new in-kernel implementation to gain many of the benefits outlined above. It is possible to build a better higher-level interface on top of the ptrace. This is akin to the libseccomp library which makes it palpable to work with seccomp \cite{libseccomp}.
+
+We implement some of these ideas for the \pc project. \pc implements a higher-level interface around ptrace, we will refer to this wrapper library as \code{libptrace}. \code{libptrace} is entirely written in Rust providing high-level methods for all ptrace operations.
+
+For example, reading a string from the tracee is as simple as calling \code{fn read\textunderscore{}c\textunderscore{}string(\&self, address: *const c\textunderscore{}char) -> Result<String>}, where \code{address} is the pointer address in the tracee. Futhermore, we can read arbitrary values from the tracee via \code{read\textunderscore{}value<T>(\&self, address: *const T) -> Result<T>}. The type parameter \code{T}, and the \code{sizeof(T)} is automatically inferred by the compiler based on the context, neat!
+
+libptrace abstracts over the underlying ptrace IO events by providing a higher-level enumeration. See \ref{fig:trace-event} for the exhaustive list of events.
+
+\begin{figure}[hbtp]
+    \begin{lstlisting}
+    pub enum TraceEvent {
+        Exec(Pid),
+        /// This is a stop before the actual program exit, this
+        /// is our last chance to ptrace queries on the tracee.
+        After this event, we expect a real program exit.
+        PreExit(Pid),
+        Prehook(Pid),
+        /// This is the parent's PID, not the child.
+        Fork(Pid),
+        Clone(Pid),
+        VFork(Pid),
+        Posthook(Pid),
+        ProcessExited(Pid, i32),
+        ReceivedSignal(Pid, Signal),
+        KilledBySignal(Pid, Signal),
+    }
+    \end{lstlisting}
+    \caption{\code{libptrace} \code{TraceEvent} enumeration. \code{libptrace} abstracts over the underlying ptrace IO events.}
+    \label{fig:trace-event}
+\end{figure}
+
+\code{libptrace} features a custom asynchronous runtime for handling ptrace IO events. This abstracts over the problem previously outlined of ptrace IO events arriving in any order, at any time. \code{libptrace} allows us to write code in a sequential matter while still allowing the runtime to handle events as soon as they are ready. See Figure \ref{fig:asyncExample}.
+
+\begin{figure}[hbtp]
+    \begin{lstlisting}
+    async fn handle_unlink(execution: _, tracer: _) {
+        let regs = tracer.get_registers();
+        let full_path = get_full_path(execution, name, tracer)?;
+        
+        let regs = tracer.posthook().await;
+        // Get return value of system call.
+        let ret_val = regs.retval::<i32>();
+        ...
+    }
+    \end{lstlisting}
+    \caption{\code{libptrace} allows us to write code in a sequential style. The \code{tracer} object is a handle to various high-level tracing methods. The \code{Execution} object holds the context of the current process being executed. The \code{.await} call may yield the execution of this function until the posthook event arrives. Arbitrarily many IO events may arrive and be handled by the \code{libptrace} runtime for other processes or threads in the meantime. When the specific post-hook we are waiting for arrives, the runtime will schedule our async function and continue executing the code from where we left off.}
+    \label{fig:asyncExample}
+
+\end{figure}
+
+The \code{libptrace}'s implementation extends this concept beyond just handling a single system call. Every process traced by \pc is handled by an asynchronous function which persists for the lifetime of that process. These asynchronous functions are paused at user-defined yield points via \code{.await}. The runtime is responsible for scheduling the next asynchronous function to run based on which ptrace IO event is received. This allows the programmer to write code to handle a single process/thread, the asynchrony is handled by the runtime. Based on our experience with \pc this model works quite well.

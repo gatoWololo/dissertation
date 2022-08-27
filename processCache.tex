@@ -5,6 +5,8 @@
 \newcommand{\systemLOC}{ProcessCache\xspace}
 
 \chpt{\pc: Automatic Process-Level Memoization}
+\label{chap:processCache}
+
 \section{Abstract}
 \section{Introduction}
 
@@ -19,22 +21,38 @@ a program is launched. We refer to a \textit{program} as the root command that \
 
 \pc parses the command line arguments passed to it and attempts to \code{execve} the given program.
 \code{./process \textunderscore cache [process cache params] -- <exe> [exe params]}
-A program is comprised of possibly many processes, those processes may themselves spawn new child processes and contain multiple threads, any child process may further call \code{execve} spawning new sub-programs. See Figure \ref{fig:exec-units} for details. The root \cacheunit will always exists, as it is created by \pc based on the CLI arguments as
+A program is comprised of possibly many processes, those processes may themselves spawn new child processes and contain multiple threads, any child process may further call \code{execve} spawning new sub-programs. See Figure \ref{fig:exec-units} for details. The root \cacheunit{} will always exists, as it is created by \pc based on the CLI arguments as
 described above.
 
 We use a unique key to uniquely identify every program [CITE]. Whenever \pc sees a call to
 \code{execve}, it checks the program specified by the system call. \pc does a lookup in our cache, a cache hit means we have seen this program before. The cache contains the outputs of this program. Instead of executing
 the program, \pc copies the output file and write the correct output to stdout and stderr. \pc essentially skips running the program but still produces the correct output of the program.
 
-\subsection{Determinism}
+\subsection{Detemining Program Inputs}
+Modern programs have many explicit but also implicit inputs. Explicit inputs include: command line arguments,
+input files, interactive input via stdin, network connections, pipes, etc. Implicit inputs include: any configuration files ready by the program, reading bytes from the network, environment variables.
+
+Any state that could affect the execution of the program could be considered an input. Some of these inputs
+may not be so obvious, such as file metadata, time, signals, etc.
+
+\pc relies on the assumption that program output is a deterministic function of its inputs, see section \ref{determinism}. By considering all the inputs to a program we can define a unique program execution
+as the combination of the program binary and all of its inputs. As long as none of the program inputs have changed, it is safe to skip reexecuting a program, and simply use the cached results.
+
+For correctness, \pc attempts to consider as many inputs to a program. \pc must know be able to observe
+all program inputs at "exec-time" to determine if any program input has changed. This is the main criteria for deciding which inputs \pc considers: an program input must be observable before the program is executed. 
+
+
+\pc considers the following program
+inputs: the binary program executable, 
+
+\subsection{Determinism} \label{determinism}
 \pc operates under the assumption that if a program is executed multiple times, with the same program
 inputs, it will produce the same outputs, that is, the program executes \textit{deterministically}.
 
-In practice this is not always the case due to various sources of non-determinism that sneak in [CITE Dettrace].
+In practice this is not always the case due to various sources of non-determinism that sneak in \cite{dettrace}.
 - Runtime systems like Dettrace handle all sources of non-determinsm for a program.
 - One large source of non-determinsm for programs is thread and process scheduling. Systems like detthreads
   can handle these.
-
 
 \pc is compatible with the orthogonal work on determinism enforcment at various levels. However,
 \pc does not require a program to be deterministic or to use a dynamic enforcement mechanism to
@@ -85,7 +103,7 @@ program and falling back to executing it.
 
 \section{\pc Design}
 % Lock Held By Omar over whole section %
-We present \pc, a system to automatically cache and skip unnecessary reexecution of computation. By tracking program input and outputs, \pc is automatically able to detect redundant computation. The next time the same exec is executed, \pc checks if any input has changed. If no input has changed, we can skip re-executing the \cacheunit and simply re-execute the program side-effects. An external observer should not be able to determine whether \pc actually executed a \cacheunit or skipped it, save for a noticeable speed-up of execution time.
+We present \pc, a system to automatically cache and skip unnecessary reexecution of computation. By tracking program input and outputs, \pc is automatically able to detect redundant computation. The next time the same exec is executed, \pc checks if any input has changed. If no input has changed, we can skip re-executing the \cacheunit{} and simply re-execute the program side-effects. An external observer should not be able to determine whether \pc actually executed a \cacheunit{} or skipped it, save for a noticeable speed-up of execution time.
 
 \pc is able to skip entire "exec trees", that is, programs made of multiple calls to processes and execs.
 \subsection{Determining Granularity of Memoization Units}
@@ -101,11 +119,11 @@ We present \pc, a system to automatically cache and skip unnecessary reexecution
 }
 \subfloat[]{
 \label{fig:multi-exec-unit}
-\includegraphics[scale=0.3]{"pc_multi_exec-crop.pdf"}
+\includegraphics[scale=0.25]{"pc_multi_exec-crop.pdf"}
 
 }
-\caption{The \cacheunit provides a useful abstraction over diverse program fork-exec structures. Processes are represented by darker circles with the letter P. Threads are represented by lighter
-circles with the letter T. (a) In the simplest case, a program contains one \cacheunit with one process. (b) An exec-unit may internally contain multiple processes and those processes may be multi-threaded. (c) A program containing multiple \cacheunit with their own possibly complex internal
+\caption{The \cacheunit{} provides a useful abstraction over diverse program fork-exec structures. Processes are represented by darker circles with the letter P. Threads are represented by lighter
+circles with the letter T. (a) In the simplest case, a program contains one \cacheunit{} with one process. (b) An exec-unit may internally contain multiple processes and those processes may be multi-threaded. (c) A program containing multiple \cacheunit{} with their own possibly complex internal
 structure.}
 \label{fig:exec-units}
 \end{figure*}
@@ -120,38 +138,38 @@ What is the right granularity of computation to cache? We consider several facto
 
 \begin{itemize}
   \item Size of \cacheunit
-  \item Ease of tracking \cacheunit inputs.
-  \item Number of opportunies to skip \cacheunit
+  \item Ease of tracking \cacheunit{} inputs.
+  \item Number of opportunies to skip \cacheunit{}.
 \end{itemize}
 
-At one extreme end, we could cache and skip an entire program, but then any changes to an input would force us to reexectue the entire program, so our skipping wouldn't be very useful. On the other end of the spectrum, there are systems like Shortcut which are able to skip "mostly-deterministic" regions of code. Shortcut is able to skip SIZE number of instructions at a time. Shortcut's approach provides considerable \cacheunit to possibly skip, but this comes at the cost of complicated low-level machinery to track inputs and skip instruction-level computation.
+At one extreme end, we could cache and skip an entire program, but then any changes to an input would force us to reexectue the entire program, so our skipping wouldn't be very useful. On the other end of the spectrum, there are systems like Shortcut \cite{shortcut} which are able to skip "mostly-deterministic" regions of code. Shortcut is able to skip SIZE number of instructions at a time. Shortcut's approach provides considerable \cacheunit{} to possibly skip, but this comes at the cost of complicated low-level machinery to track inputs and skip instruction-level computation.
 It is natural to consider the process as a candidate for our \cacheunit. In a multi-processed program,
   we could then skip unnecessary processes, only executing those whose input has changed. Processes are difficult
-  however. A \cacheunit should be uniquely identified by its inputs, for a Linux process, the starting input
+  however. A \cacheunit{} should be uniquely identified by its inputs, for a Linux process, the starting input
   includes the entire state of the parent process from which our process was forked/cloned from. This "input" process-image state is difficult to capture. 
 Instead, \pc uses the Linux "exec" family of system calls to determine our \cacheunit. The exec family of system calls provides several advantages to caching. Unlike processes, execs have clear inputs: an exec can
-be uniquely identified by a tuple containing the: binary executable, command line arguments, environment variables, and any IO inputs read at runtime. This allows us to quickly and easily check if a \cacheunit needs
+be uniquely identified by a tuple containing the: binary executable, command line arguments, environment variables, and any IO inputs read at runtime. This allows us to quickly and easily check if a \cacheunit{} needs
 to be recomputed (one of its inputs has changed) or can be skipped.
 
 Other benefits:
 \begin{itemize}
   \item Many Linux programs are written in a "fork-exec" style of computation. So execs provide a natural
-  \cacheunit for us.
+  \cacheunit{} for us.
   \item This design naturally supports multi-process execs (one exec call which spawns multiple processes) and multi-threaded programs. We only consider the execs and implementation details of a program like number of processes, threads, pipes, etc are abstracted over.
 \end{itemize}
 
-Our \cacheunit are based on execs within a program.
+Our \cacheunit{} are based on execs within a program.
 
 
 \subsection{The \cacheunit}
-\pc works at the granularity of \cacheunit. \pc caches the results of \cacheunit and at every exec
+\pc works at the granularity of \cacheunit. \pc caches the results of \cacheunit{} and at every exec
 IO event, determines whether it can skip this \cacheunit. Figure \ref{fig:single-exec-unit} show the simplest
-case for a program: a single exec-unit containing one process. The \cacheunit abstracts over the process and
-thread structure of a program. Just like processes form a natural tree structure for programs, \cacheunit also
-create a tree structure as shown in Figure \ref{fig:multi-exec-unit}. Every individual \cacheunit in Figure \ref{fig:multi-exec-unit} is a candidate for skipping. Furthermore, \pc can also cache entire \cacheunit
+case for a program: a single exec-unit containing one process. The \cacheunit{} abstracts over the process and
+thread structure of a program. Just like processes form a natural tree structure for programs, \cacheunit{} also
+create a tree structure as shown in Figure \ref{fig:multi-exec-unit}. Every individual \cacheunit{} in Figure \ref{fig:multi-exec-unit} is a candidate for skipping. Furthermore, \pc can also cache entire \cacheunit
 trees or subtrees.
 
-Programs with a fork-exec structure are the best candidates for \pc, as this creates the most candidate \cacheunit for skipping. Many Linux workloads follow the fork-exec paradigm, making our \cacheunit a natural choice.
+Programs with a fork-exec structure are the best candidates for \pc, as this creates the most candidate \cacheunit{} for skipping. Many Linux workloads follow the fork-exec paradigm, making our \cacheunit{} a natural choice.
 
 \subsection{Tracing Program IO Events}
 Build systems could be consider a type of caching/memoizing system where the user is expected to explicitly list every dependency and output of a build. This process both error prone and tedious. A user could over-specify (forcing the build system to rebuild unnecessarily) or under-specify (no rebuilding will happen even though an input has changed) dependencies. To avoid these issues, \pc automatically determines all program dependencies by tracing all relevant IO events a program executes.
@@ -159,29 +177,31 @@ Build systems could be consider a type of caching/memoizing system where the use
 Our tracing happens at the system call level. We trace relevant IO system calls. This allows us to precisely determine the inputs and outputs to a program. It would be prohibitively expensive to trace every system call a program does. So \pc only traces a subset of all system calls. For example, IO-bound processes can perform many calls to read and write. Instead for file events, we intercept calls to open, creat, openat, etc. By introspecting the mode argument to this system call we can determine whether this file was open for read (input file) for write, truncate, read/write etc. So we use the argument flags to conservatively determine file inputs and outputs.
 
 \subsection{Cache Design}
-Our cache is persistent state which maps keys to values. Our cache aims to provide quick cache look up to determine whether we have seen a program execute before.
-On a cache-hit it is safe to skip execution of this program. We intercept calls to the execve system call and determine whether to skip or execute the \cacheunit. 
+Our cache holds all the program executions that \pc has traced. Our cache aims to provide quick cache look up to determine whether we have seen a program execute before. The cache must persist across many program executions, so it is persistent state on disk. Our cache maps keys which identify unique program executions to all metadata that \pc generated during program tracing. This metadata is utilized by \pc to determine several things: the inputs to this program execution and the state of the world before this program executed, the side-effects and state after this program executed, all output files the program generated. 
 
 \subsection{Uniquely Identifying A Program}
 In \pc, a computation can uniquely be identified by the inputs to our \cacheunit. Specifically a computation can be uniquely identified by the following tuple: (program binary, command line arguments, environment variables, current working directory, and input file).
 
 
 \subsection{Determining Program Input and Outputs}
-In a build system like make, the user is explicitly lists the inputs to and outputs to a build step. If the user
-incorrectly under-specifies or over-specifies inputs or outputs, (program dependencies), the build may fail in hard to diagnose ways.
+In a build system like make, the user is explicitly lists the inputs to and outputs to a build step. If the user incorrectly under-specifies or over-specifies inputs or outputs, (program dependencies), the build may fail in hard to diagnose ways.
 
 To avoid these issues, \pc automatically tracks IO events a program performs. This allows us to precisely track all program inputs and side effects. Program IO events are not the same as the input and outputs to a program. \pc must reason about the IO events of a program to determine the actual inputs and outputs of a program.
 
+For example consider a program which 
 
 \subsubsection{Pre-Conditions}
+Pre-conditions are predicates about the state of the world before a program is executed. For example, the content of all input files, but extends beyond inputs to a program to include current working directory, and state environment variables.
 
 \subsubsection{Post Conditions}
 \subsubsection{Generating Pre Conditions and Post Conditions from IO Events}
-\subsection{Skipping Program Execution}
-\subsubsection{Skipping Exec Calls}
-When \pc determines an \cacheunit can be skipped [REF to Relevant Section] it does the following:
+
+\subsection{Checking \& Skipping Unnecessary Program Executions}
+\subsubsection{Skipping Program Execution}
+\label{sec:skipping-program-execution}
+When \pc determines an \cacheunit{} can be skipped [REF to Relevant Section] it does the following:
 \begin{enumerate}
-  \item \pc determines the current \cacheunit can be completely skipped.
+  \item \pc determines the current \cacheunit{} can be completely skipped.
   \item We could simply inject a exit/exit-group (exit-group is more correct as it handles exit of multithreaded programs properly) system call into the current process. This would not always work as program may rely on
   the close-on-exec semantics of programs to execute properly. So instead we execute the execve system call with an empty binary which immediately call exit with the correct error code.
   \item We consult the cache and execute all side effects this computation would have done. Namely, we copy all relevant output files to their correct location and write the correct bytes to stdout and stderr.
@@ -189,8 +209,18 @@ When \pc determines an \cacheunit can be skipped [REF to Relevant Section] it do
 \end{enumerate}
 
 \subsubsection{Skipping Leaf Nodes}
-Start by explaining skipping/caching for a leaf node sine it is simpler. Later generalize to enire sub trees
+We start by explaining how \pc skips a "leaf-node". A leaf-node is any \cacheunit{} which does not have any further child \cacheunit{}s. The next section generalizes this idea to caching entire \cacheunit{}-subtrees, these are arbitrary \cacheunit{}s which may have children. See Figure \ref{fig:multi-exec-unit} for an example of a program with a \cacheunit{} tree.
+
+\pc makes skipping decision at program \code{execve}-time. \pc uses the arguments to \code{execve} plus additional context (see Section TODO) to generate a unique key. This key is used for a lookup in our cache. The cache two important sets of predicates: the set of preconditions that must hold true for us to be able skip the execution, and the post-condition set. \pc iterates through the set of pre-conditions asserting all of them hold true (See Section \ref{sec:pre-condition-checking} for more information). If all the preconditions hold true, \pc knows none of the inputs to the program have changed. Therefore it is correct to skip this program. \pc skips the program execution as outlined in Section \ref{sec:skipping-program-execution}.
+
+\pc uses the postcondition set to replicate the side-effects this program would have made had it run. An outside observer should not be able to tell actually running the \cacheunit{} versus \pc skipping it, aside from a difference in execution time.
+
 \subsubsection{Skipping Entire Subtrees}
+Skipping leaf nodes is simpler as we only have to reason about the pre and post-conditions to an individual \cacheunit{}. Skipping \cacheunit{}-subtrees requires us to reason about dependencies between \cacheunit{}s we are attempting to skip.
+
+Consider
+
+This means that \pc assumes that different \cacheunit{}s do not have any races with shared files, this assumption can be checked by systems like RacePro \cite{racepro}.
 
 \section{\pc Implementation}
 % Lock Held By Omar over whole section %
@@ -238,6 +268,10 @@ To maximize the amount of IO events we handle, \pc handles IO event as they come
 
 Our prototype abstracts over IO events arriving from different tracee processes/threads by implementing an
 asynchronous abstraction over IO events. We use a custom Rust asynchronous runtime executor.
+
+\subsubsection{Pre-Condition Checking}
+\label{sec:pre-condition-checking}
+All pre-conditions must hold true if \pc is to skip an \cacheunit{}. \pc 
 
 \subsection{Limitations}
 Talk about specific system calls we need to address here?

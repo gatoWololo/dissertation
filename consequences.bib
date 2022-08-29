@@ -1,3 +1,246 @@
+@misc{perf,
+    title={perf: Linux profiling with performance counters},
+    howpublished={\url{https://perf.wiki.kernel.org/index.php/Main_Page}}
+}
+
+@inproceedings{programmable-switch,
+author = {Ports, Dan R. K. and Nelson, Jacob},
+title = {When Should The Network Be The Computer?},
+year = {2019},
+isbn = {9781450367271},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3317550.3321439},
+doi = {10.1145/3317550.3321439},
+abstract = {Researchers have repurposed programmable network devices to place small amounts of application computation in the network, sometimes yielding orders-of-magnitude performance gains. At the same time, effectively using these devices requires careful use of limited resources and managing deployment challenges.This paper provides a framework for principled use of in-network processing. We provide a set of guidelines for building robust and deployable in-network primives, along with a taxonomy to help identify which applications can benefit from in-network processing and what types of devices they should use.},
+booktitle = {Proceedings of the Workshop on Hot Topics in Operating Systems},
+pages = {209–215},
+numpages = {7},
+keywords = {in-network computation, reconfigurable devices, programmable switches, smart NICs},
+location = {Bertinoro, Italy},
+series = {HotOS '19}
+}
+    @inproceedings{kernel-bypass-io,
+    author = {Zhang, Irene and Liu, Jing and Austin, Amanda and Roberts, Michael Lowell and Badam, Anirudh},
+    title = {I'm Not Dead Yet! The Role of the Operating System in a Kernel-Bypass Era},
+    year = {2019},
+    isbn = {9781450367271},
+    publisher = {Association for Computing Machinery},
+    address = {New York, NY, USA},
+    url = {https://doi.org/10.1145/3317550.3321422},
+    doi = {10.1145/3317550.3321422},
+    abstract = {Researchers have long predicted the demise of the operating system [21, 26, 41]. As datacenter servers increasingly incorporate I/O devices that let applications bypass the OS kernel (e.g., RDMA [12] and DPDK [15] network devices or SPDK storage devices), this prediction may finally come true. While kernel-bypass devices do eliminate the OS kernel from the I/O path, they do not handle the kernel's most important job: offering higher-level abstractions. This paper argues for a new high-level, device-agnostic I/O abstraction for kernel-bypass devices. We propose the Demikernel, a new library OS architecture for kernel-bypass devices. It defines a high-level, kernel-bypass I/O abstraction and provides user-space library OSes to implement that abstraction across a range of kernel-bypass devices. The Demikernel makes applications easier to build, portable across devices, and unmodified as devices continue to evolve.},
+    booktitle = {Proceedings of the Workshop on Hot Topics in Operating Systems},
+    pages = {73–80},
+    numpages = {8},
+    keywords = {datacenters, operating systems, kernel bypass},
+    location = {Bertinoro, Italy},
+    series = {HotOS '19}
+    }
+
+      
+
+
+
+@inproceedings{load-balancing,
+author = {Pai, Vivek S. and Aron, Mohit and Banga, Gaurov and Svendsen, Michael and Druschel, Peter and Zwaenepoel, Willy and Nahum, Erich},
+title = {Locality-Aware Request Distribution in Cluster-Based Network Servers},
+year = {1998},
+isbn = {1581131070},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/291069.291048},
+doi = {10.1145/291069.291048},
+abstract = {We consider cluster-based network servers in which a front-end directs incoming requests to one of a number of back-ends. Specifically, we consider content-based request distribution: the front-end uses the content requested, in addition to information about the load on the back-end nodes, to choose which back-end will handle this request. Content-based request distribution can improve locality in the back-ends' main memory caches, increase secondary storage scalability by partitioning the server's database, and provide the ability to employ back-end nodes that are specialized for certain types of requests.As a specific policy for content-based request distribution, we introduce a simple, practical strategy for locality-aware request distribution (LARD). With LARD, the front-end distributes incoming requests in a manner that achieves high locality in the back-ends' main memory caches as well as load balancing. Locality is increased by dynamically subdividing the server's working set over the back-ends. Trace-based simulation results and measurements on a prototype implementation demonstrate substantial performance improvements over state-of-the-art approaches that use only load information to distribute requests. On workloads with working sets that do not fit in a single server node's main memory cache, the achieved throughput exceeds that of the state-of-the-art approach by a factor of two to four.With content-based distribution, incoming requests must be handed off to a back-end in a manner transparent to the client, after the front-end has inspected the content of the request. To this end, we introduce an efficient TCP handoflprotocol that can hand off an established TCP connection in a client-transparent manner.},
+booktitle = {Proceedings of the Eighth International Conference on Architectural Support for Programming Languages and Operating Systems},
+pages = {205–216},
+numpages = {12},
+location = {San Jose, California, USA},
+series = {ASPLOS VIII}
+}
+
+  
+
+@inproceedings {farm,
+author = {Aleksandar Dragojevi{\'c} and Dushyanth Narayanan and Miguel Castro and Orion Hodson},
+title = {{FaRM}: Fast Remote Memory},
+booktitle = {11th USENIX Symposium on Networked Systems Design and Implementation (NSDI 14)},
+year = {2014},
+isbn = {978-1-931971-09-6},
+address = {Seattle, WA},
+pages = {401--414},
+url = {https://www.usenix.org/conference/nsdi14/technical-sessions/dragojevi{\'c}},
+publisher = {USENIX Association},
+month = apr,
+}
+
+@misc{rdma,
+    title={A rdma protocol specification},
+    year = {2002},
+    month = {October},
+    author = {RDMA Consortium},
+    howpublished={\url{https://www.dpdk.org/}}
+}
+
+
+ @misc{dpdk,
+    title={Data plane development kit},
+    howpublished={\url{https://www.dpdk.org/}}
+}
+
+
+ @misc{restful-apis,
+    title={What is a REST API?},
+    howpublished={\url{https://www.redhat.com/en/topics/api/what-is-a-rest-api}}
+    }
+
+@inproceedings{shortcut,
+    author = {Dou, Xianzheng and Chen, Peter M. and Flinn, Jason},
+    title = {ShortCut: Accelerating Mostly-Deterministic Code Regions},
+    year = {2019},
+    isbn = {9781450368735},
+    publisher = {Association for Computing Machinery},
+    address = {New York, NY, USA},
+    url = {https://doi.org/10.1145/3341301.3359659},
+    doi = {10.1145/3341301.3359659},
+    abstract = {Applications commonly perform repeated computations that are mostly, but not exactly, similar. If a subsequent computation were identical to the original, the operating system could improve performance via memoization, i.e., capturing the differences in program state caused by the computation and applying the differences in lieu of re-executing the computation. However, opportunities for generic memoization are limited by a myriad of differences that arise during execution, e.g., timestamps differ and communication yields non-deterministic responses. Such difference cause memoization to produce incorrect state.ShortCut generically accelerates mostly-deterministic computation by partial memoization. It creates a program, called a slice, that modifies the state diff to account for variation in a subsequent computation. ShortCut learns which inputs, data flows and control flows are likely, and makes assumptions about possible values for each during slice generation. Assuming only likely values rather than allowing all possible values makes complex slice generation feasible and slice execution much faster. Slices are self-verifying; they include predicates that verify all assumptions made during a subsequent execution. When these verifications succeed, the slice is guaranteed to produce a correct modification. If a verification fails, ShortCut transparently rolls back the slice execution and runs the non-memoized computation. Users see no difference between normal, memoized, and rolled-back execution.},
+    booktitle = {Proceedings of the 27th ACM Symposium on Operating Systems Principles},
+    pages = {570–585},
+    numpages = {16},
+    location = {Huntsville, Ontario, Canada},
+    series = {SOSP '19}
+}
+
+
+@inproceedings{dthreads,
+ author = {Liu, Tongping and Curtsinger, Charlie and Berger, Emery D.},
+ title = {Dthreads: Efficient Deterministic Multithreading},
+ booktitle = {Symposium on Operating Systems Principles},
+ year = {2011},
+ publisher = {ACM},
+ series = {SOSP '11},
+ isbn = {978-1-4503-0977-6},
+ location = {Cascais, Portugal},
+ pages = {327--336},
+ numpages = {10},
+ url = {http://doi.acm.org/10.1145/2043556.2043587},
+ doi = {10.1145/2043556.2043587},
+ acmid = {2043587},
+ address = {New York, NY, USA},
+}
+
+@inproceedings{arnold,
+ author = {Devecsery, David and Chow, Michael and Dou, Xianzheng and Flinn, Jason and Chen, Peter M.},
+ title = {Eidetic Systems},
+ booktitle = {Proceedings of the 11th USENIX Conference on Operating Systems Design and Implementation},
+ series = {OSDI'14},
+ year = {2014},
+ isbn = {978-1-931971-16-4},
+ location = {Broomfield, CO},
+ pages = {525--540},
+ numpages = {16},
+ url = {http://dl.acm.org/citation.cfm?id=2685048.2685090},
+ acmid = {2685090},
+ publisher = {USENIX Association},
+ address = {Berkeley, CA, USA},
+}
+
+
+@article{perfect-dependencies,
+author = {Spall, Sarah and Mitchell, Neil and Tobin-Hochstadt, Sam},
+title = {Build Scripts with Perfect Dependencies},
+year = {2020},
+issue_date = {November 2020},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+volume = {4},
+number = {OOPSLA},
+url = {https://doi.org/10.1145/3428237},
+doi = {10.1145/3428237},
+abstract = {Build scripts for most build systems describe the actions to run, and the dependencies between those actions - but often build scripts get those dependencies wrong. Most build scripts have both too few dependencies (leading to incorrect build outputs) and too many dependencies (leading to excessive rebuilds and reduced parallelism). Any programmer who has wondered why a small change led to excess compilation, or who resorted to a clean step, has suffered the ill effects of incorrect dependency specification. We outline a build system where dependencies are not specified, but instead captured by tracing execution. The consequence is that dependencies are always correct by construction and build scripts are easier to write. The simplest implementation of our approach would lose parallelism, but we are able to recover parallelism using speculation.},
+journal = {Proc. ACM Program. Lang.},
+month = {nov},
+articleno = {169},
+numpages = {28},
+keywords = {build systems, functional programming}
+}
+
+ @misc{rattle,
+    title={Rattle: Forward build system with speculation and caching },
+    howpublished={\url{https://github.com/ndmitchell/rattle}}
+    }
+
+@misc{bazel,
+    title={Bazel: a fast, scalable, multi-language and extensible build system},
+    howpublished={\url{https://bazel.build/}}
+    }
+
+@inproceedings{forward-build-systems,
+author = {Spall, Sarah and Mitchell, Neil and Tobin-Hochstadt, Sam},
+title = {Forward Build Systems, Formally},
+year = {2022},
+isbn = {9781450391825},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3497775.3503687},
+doi = {10.1145/3497775.3503687},
+abstract = {Build systems are a fundamental part of software construction, but their correctness has received comparatively little attention, relative to more prominent parts of the toolchain. In this paper, we address the correctness of forward build systems, which automatically determine the dependency structure of the build, rather than having it specified by the programmer. We first define what it means for a forward build system to be correct---it must behave identically to simply executing the programmer-specified commands in order. Of course, realistic build systems avoid repeated work, stop early when possible, and run commands in parallel, and we prove that these optimizations, as embodied in the recent forward build system Rattle, preserve our definition of correctness. Along the way, we show that other forward build systems, such as Fabricate and Memoize, are also correct. We carry out all of our work in Agda, and describe in detail the assumptions underlying both Rattle itself and our modeling of it.},
+booktitle = {Proceedings of the 11th ACM SIGPLAN International Conference on Certified Programs and Proofs},
+pages = {130–142},
+numpages = {13},
+keywords = {functional programming, systems, verified applications, build systems, concurrency, agda, program verification},
+location = {Philadelphia, PA, USA},
+series = {CPP 2022}
+}
+
+@misc{make,
+    title={GNU Make},
+    howpublished={\url{https://www.gnu.org/software/make/}}
+    }
+
+@misc{salsa,
+    title={Salsa: A generic framework for on-demand, incrementalized computation},
+    howpublished={\url{https://github.com/salsa-rs/salsa}}
+    }
+
+@inproceedings{naiad,
+author = {Murray, Derek G. and McSherry, Frank and Isaacs, Rebecca and Isard, Michael and Barham, Paul and Abadi, Mart\'{\i}n},
+title = {Naiad: A Timely Dataflow System},
+year = {2013},
+isbn = {9781450323888},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/2517349.2522738},
+doi = {10.1145/2517349.2522738},
+abstract = {Naiad is a distributed system for executing data parallel, cyclic dataflow programs. It offers the high throughput of batch processors, the low latency of stream processors, and the ability to perform iterative and incremental computations. Although existing systems offer some of these features, applications that require all three have relied on multiple platforms, at the expense of efficiency, maintainability, and simplicity. Naiad resolves the complexities of combining these features in one framework.A new computational model, timely dataflow, underlies Naiad and captures opportunities for parallelism across a wide class of algorithms. This model enriches dataflow computation with timestamps that represent logical points in the computation and provide the basis for an efficient, lightweight coordination mechanism.We show that many powerful high-level programming models can be built on Naiad's low-level primitives, enabling such diverse tasks as streaming data analysis, iterative machine learning, and interactive graph mining. Naiad outperforms specialized systems in their target application domains, and its unique features enable the development of new high-performance applications.},
+booktitle = {Proceedings of the Twenty-Fourth ACM Symposium on Operating Systems Principles},
+pages = {439–455},
+numpages = {17},
+location = {Farminton, Pennsylvania},
+series = {SOSP '13}
+}
+
+@article{incremental-computing,
+author = {Hammer, Matthew A. and Dunfield, Jana and Headley, Kyle and Labich, Nicholas and Foster, Jeffrey S. and Hicks, Michael and Van Horn, David},
+title = {Incremental Computation with Names},
+year = {2015},
+issue_date = {October 2015},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+volume = {50},
+number = {10},
+issn = {0362-1340},
+url = {https://doi.org/10.1145/2858965.2814305},
+doi = {10.1145/2858965.2814305},
+abstract = {Over the past thirty years, there has been significant progress in developing general-purpose, language-based approaches to incremental computation, which aims to efficiently update the result of a computation when an input is changed. A key design challenge in such approaches is how to provide efficient incremental support for a broad range of programs. In this paper, we argue that first-class names are a critical linguistic feature for efficient incremental computation. Names identify computations to be reused across differing runs of a program, and making them first class gives programmers a high level of control over reuse. We demonstrate the benefits of names by presenting Nominal Adapton, an ML-like language for incremental computation with names. We describe how to use Nominal Adapton to efficiently incrementalize several standard programming patterns---including maps, folds, and unfolds---and show how to build efficient, incremental probabilistic trees and tries. Since Nominal Adapton's implementation is subtle, we formalize it as a core calculus and prove it is from-scratch consistent, meaning it always produces the same answer as simply re-running the computation. Finally, we demonstrate that Nominal Adapton can provide large speedups over both from-scratch computation and Adapton, a previous state-of-the-art incremental computation system.},
+journal = {SIGPLAN Not.},
+month = {oct},
+pages = {748–766},
+numpages = {19},
+keywords = {nominal matching, incremental compu- tation, memoization, self-adjusting computation, demanded computation graph (DCG), thunks, call-by-push-value (CBPV), laziness, structural matching}
+}
+
+
 @misc{afl,
     title={american fuzzy lop},
     howpublished={\url{https://lcamtuf.coredump.cx/afl/}}
@@ -977,7 +1220,6 @@ month = may
  booktitle = {OOPSLA: International Conference on Object Oriented Programming Systems Languages and Applications},
  year = {2011},
  publisher = {ACM},
-}
  pages = {427--444},
  series = {OOPSLA '11},
  isbn = {978-1-4503-0940-0},
@@ -988,24 +1230,7 @@ month = may
  acmid = {2048101},
  address = {New York, NY, USA},
  keywords = {incremental memoization, parallel programming, self-adjusting computation},
-
-
-@inproceedings{dthreads,
- author = {Liu, Tongping and Curtsinger, Charlie and Berger, Emery D.},
- title = {Dthreads: Efficient Deterministic Multithreading},
- booktitle = {Symposium on Operating Systems Principles},
- year = {2011},
- publisher = {ACM},
 }
- series = {SOSP '11},
- isbn = {978-1-4503-0977-6},
- location = {Cascais, Portugal},
- pages = {327--336},
- numpages = {10},
- url = {http://doi.acm.org/10.1145/2043556.2043587},
- doi = {10.1145/2043556.2043587},
- acmid = {2043587},
- address = {New York, NY, USA},
 
 @misc{pgi-cuda-x86,
     title={{PGI CUDA-x86}},
@@ -9486,22 +9711,6 @@ URL = {http://dx.doi.org/10.1093/nar/gkg500},
   year = "2016",
   url = "https://wiki.debian.org/ReproducibleBuilds?action=recall&rev=339",
   note = "[Online; accessed 14-April-2017]"
-}
-
-@inproceedings{arnold,
- author = {Devecsery, David and Chow, Michael and Dou, Xianzheng and Flinn, Jason and Chen, Peter M.},
- title = {Eidetic Systems},
- booktitle = {Proceedings of the 11th USENIX Conference on Operating Systems Design and Implementation},
- series = {OSDI'14},
- year = {2014},
- isbn = {978-1-931971-16-4},
- location = {Broomfield, CO},
- pages = {525--540},
- numpages = {16},
- url = {http://dl.acm.org/citation.cfm?id=2685048.2685090},
- acmid = {2685090},
- publisher = {USENIX Association},
- address = {Berkeley, CA, USA},
 }
 
 @article{diffracting-trees,

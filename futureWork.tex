@@ -22,10 +22,11 @@ One example of this complicated design is blocking system calls. Any blocking sy
 Ptrace is a Linux mechanism for tracing the execution of another program. Ptrace     is powerful enough to implement debuggers like GDB and system call tracing utilities     like strace. Ptrace allows one process, the tracer, to trace the execution of possibly     many processes or threads, the tracees. A tracee executes until some event specified by the tracer occurs. On such an event the tracee is stopped and the tracer receives an event message from the OS. Possible events include: system call execution, instruction execution, process spawn, process calls execve, and process exit, and more.
 
 While the tracee is stopped, the tracer can read and write to arbitrary memory and registers of the tracee. There are two system call interception events:
-\begin{enumerate}
+\begin{compactitem}
+
      \item Pre-hook events: A system call is stopped before it is executed.
      \item Post-hook event: The program is stopped right after executing a system call but before the program executes.
-\end{enumerate}
+\end{compactitem}
      We can combine ptrace interception events plus arbitrary reads and writes to memory and register to create powerful process manipulation mechanisms. With some work, ptrace can be used to inject arbitrary system calls into a process, change a system call's arguments before it is called, and skip or emulate system calls on behalf of the tracee.
 \subsection{ChaOS: Fault Injection Testing for System Calls}     
 ChaOS injects a fault at $S_n$, the nth system call executed by the current process. Every system call has a different set of system call specific error codes. We plan to implement handlers for most common system calls. Choosing which system call to target and which errors to inject will be largely heuristic based. We suspect most programs do not handle specific error codes and instead handle all possible errors ``coarsely'', therefore the specific error we inject is less relevant. We plan to experimentally validate this.
@@ -36,11 +37,12 @@ Instead, before injecting the fault at $S_n$, on the ptrace prehook event, we in
 
 \subsubsection{Automatically Detecting Failures}
 Ultimately, ChaOS is designed to automatically detect unhandled system call failures. We defer making guarantees or giving a precise definition of handling system call failures. This is difficult to do as it is unclear what exactly it means for a program to properly ``handle'' a system call failure. We propose an automatic approach while avoiding (or at least largely minimizing) false positives. Let us consider the possible cases when injecting a fault at a system call site which would normally succeed (See \ref{syscallfailures} for ensuring a system call would succeed):
-\begin{itemize}
+\begin{compactitem}
+
 \item Easy Case: The program reports an error and exits, we know this program successfully handled the system call failure.
 \item Easy Case: The program aborts unexpectedly (e.g segmentation fault) due to our fault injection, we have found an unhandled system call error.
 \item Hard Case: The program continues executing. Did the program handle the error, recovered, and continued executing? Or did it fail to handle the error and is now running in a state which the programmer did not intend?
-\end{itemize}
+\end{compactitem}
 We may handle the hard case as follows. As stated before, we inject faults into the forked version of the process, \texttt{P'}. After the fault injection, we can step through \texttt{P'} instruction-by-instruction observing the values of the program counter (PC) register. At the same time we also step through \texttt{P} (recall \texttt{P} was also stopped at $S_n$). \texttt{P} did not have a fault injected. If the values of the PC register are the same for \texttt{P} and \texttt{P'} we can conclude the program did not do any handling of the fault. It is currently unclear how many instructions to step through before concluding the error is unhandled. We expect to develop this heuristic based on observation of real world programs.
 The soundness of this approach relies on our previous work on deterministic program execution \cite{dettrace}. Given that P and P’ have identical starting states (this is true by the semantics of the fork system call) stepping through both process executions is a deterministic function of the initial starting state. So any differences in program execution must be attributed to the fault injection.
 
@@ -54,10 +56,10 @@ We allow P to execute its $S_n$ system call and stop $S_n$ at the system call po
 
 \subsubsection{Maintaining Program Invariants and Correctness}
 In general, programs may hold invariants we cannot know. Our fault injection may contradict programmer assumptions and lead to impossible scenarios. For example, a program executes the open system call to read some file f. Would it make sense to inject a fault on the open system call? Both yes and no seem to be sensible answers:
-\begin{itemize}
+\begin{compactitem}
 \item Yes: A correct program should always check and handle all exceptional system call errors.
 \item No: This program may hold an invariant that the file should always exist. We have broken program invariants by injecting a fault so the program is still correct under its runtime assumptions.
-\end{itemize}
+\end{compactitem}
 While my personal opinion is that programs should handle even seemingly impossible scenarios, we will consult the relevant literature to see how this should be handled.
 
 \subsection{Evaluation}

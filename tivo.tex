@@ -1,5 +1,5 @@
 \chpt{Tivo}
-This chapter is an updated and revised version the original lightweight record-and-replay paper \citep{tivo}. This project eventually came to be known as Tivo.
+This chapter is an updated and revised version the original lightweight record-and-replay white paper \citep{tivo}. This project eventually came to be known as Tivo.
 \section{Abstract}
      In this paper we present Tivo, a system for lightweight record-and-replay (RR). In contrast to traditional "fully deterministic" RR solutions, lightweight RR focuses on handling nondeterminism arising from thread communication for programs with concurrent, message-passing architectures. By decreasing nondeterminism in programs, lightweight RR decreases the number of intermittent failures in program's test suites. We evaluated the effectiveness of lightweight RR on Servo, a highly concurrent web browser. Our evaluation shows lightweight RR is effective at greatly reducing intermittent failures for some tests, but not others. Lightweight RR performance overhead remains a work in progress, but log sizes are quite small. We believe with further work lightweight RR could prove useful for lowering nondeterminism in programs at a negligible performance overhead.
 \section{Background}
@@ -30,7 +30,7 @@ tests seemingly pass or fail at random. There are unknown sources of nondetermin
 Servo which cause intermittent failures.
 
 \subsection{Existing Record-and-Replay Solutions}
-Record-and-replay has been widely studied in academia \cite{arnold, r2, panda, review-reverse-debugging, hunt_ddos:_2013, castor} and used in industry \cite{retrace}. One
+Record-and-replay has been widely studied in academia \cite{arnold, r2, panda, review-reverse-debugging, hunt_ddos:_2013, castor, jockey} and used in industry \cite{retrace}. One
 such state-of-the-art system is Mozilla's \code{rr} project \citep{mozilla-rr}, which serves
 as a robust RR debugging framework. It is successfully used in production
 with code-bases consisting of millions of lines of code like the Firefox web browser.

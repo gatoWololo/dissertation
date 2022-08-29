@@ -1,10 +1,11 @@
 \abstract{
-This dissertation covers various works during my PhD in the general area of Operating Systems and systems programming. Many projects share the themes of leveraging system call interposition and deterministic properties of programs. This dissertation covers features and uses of ptrace, a Linux API for tracing and modifying live processes.
+This dissertation covers various works during my PhD in the general area of operating systems and systems programming. Many projects share the themes of leveraging system call interposition and deterministic properties of programs. This dissertation overviews the ptrace Linux API for tracing and modifying live processes and proposes changes and features a next generation Linux process tracing mechanism should have.
+
  This dissertation covers the following projects:
  Dettrace: A deterministic container abstraction. Dettrace provides a containerized enviroment where any computation inside this container is guranteed to be deterministic via dynamic determinism enforcement. 
  Capybara: A technique for fast, live TCP connection migration leveraging advancements in kernel-bypass IO technology and programmable switches in the datacenter environment.
  ProcessCache: A system for automatically caching results of process-level computations. ProcessCache automatically infers inputs and outputs to a program and will only re-execute processes if inputs to them have changed. Otherwise, it skips unnecessary recomputation by using the cached results.
- Tivo: Tivo introduces the concept of lightweight record and replay. Tivo replays TODO.
+ Tivo: Tivo introduces the concept of lightweight record and replay. A lightweight determinism enforcement mechanism for thread-level nondeterminism.
  
- The future work covers two directions for future work: ChaOS: a fuzzing style system for injecting system call failures into sofware, ensuring errors are handled by applications. And a overview of current and future direction for system call interposition.
+ The future work covers two directions for future work: ChaOS: a fuzzing style system for injecting system call failures into sofware, ensuring errors are handled by applications. And an overview of current and future direction for system call interposition.
 }

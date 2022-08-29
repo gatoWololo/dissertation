@@ -1,82 +1,113 @@
 
 \chpt{Capybara: Low-Latency Live TCP Connection Migration}
-n this work, we present Capybara. A system for live TCP connection migration.
 \section{Motivation}
-- Datacenter Latency Sensitive Applications
-- Load balancing
+
+Due to the cost of establishing connections, applications attempt to set up a connection once with clients and then service multiple requests from these clients \cite{prism}. This helps amortized the cost of establishing connections, which requires multiple round-trips for TCP. However, long-running connections with high numbers of request may lead to skewed workloads for machines servicing those connections. Currently, those connections cannot be reallocated to other machines for better load distribution. This uneven load can lead to higher latencies on busy machines while other machines in the cluster are idle or experience little load. Capybara attempts to solve this problem by allowing connections to be migrated between different backend machines for better system load distribution.
+
 \section{Background}
 \subsection{Kernel Bypass IO}
-Recent advancements in hardware as well as demand from datacenters have brought a new generation of technologies into the OS and networking space. Among this changes are a class of technilogies known as kernel-bypass IO.
+Recent advancements in hardware as well as business demand from datacenters have brought a new generation of technologies into the OS and networking space. Among this changes are a class of technologies known as kernel-bypass IO \cite{kernel-bypass-io}.
 
-Network IO is classically done via system calls into the OS kernel. System calls incur slight overhead as a mode switch is required to go into kernel space. As datacenter applications have become IO bound the have also become IO sensitive. This has become a large percentage of the cost for some applications. For example, in-memory key value stores like Redis \cite{redis} and Memcached \cite{memcached}.
-\subsection{Programmable Switches}
-For latency-critical application, like those found in the datacenter, 
+Network IO is classically done via system calls into the OS kernel. System calls incur slight overhead as a mode switch is required to go into kernel space. As datacenter applications have become IO-bound, they have also become more IO overhead sensitive. This is now a non-trivial percentage of the execution time for some applications. For example, in-memory key value stores like Redis \cite{redis} and Memcached \cite{memcached}. As the name implies, kernel-bypass IO avoids this overhead by avoiding calls to the kernel in the data path. Control plane operations are still handled by the OS off the critical path, e.g. program setup time. Latency-critical data plane operations on the critical path are implemented as userspace libraries, enabled by the underlying driver and hardware implementation. This allows for unprecedented IO latency and throughput. These technologies include RDMA \cite{rdma}, DPDK \cite{dpdk} and SPDK.
+
 \subsection{Demikernel}
-\subsection{TCP Connections}
-\subsection{Load Balancing}
+Bypassing the kernel presents its own set of problems. The OS provides many useful abstractions for programs. Among them portability and abstracting over low-level hardware details. Kernel-bypass IO technologies do not have a unified interface and programmers must understand low-level details of these technologies to fully utilize their advertised performance gains. Demikernel \cite{demikernel} provides a unified, POSIX-like interface over heterogeneous kernel bypass IO technologies like RDMA, DPDK and SPDK. This allows existing applications to leverage these technologies with minimal changes to their code and without being a domain expert in these technologies. Demikernel additionally provides a fast userspace TCP/IP stack.
+
+\subsection{Programmable Switches}
+Programmable hardware such as FPGAs and ASICs have enabled unprecedented performance in many areas of computing. The datacenter network is currently going through such a revolution. In-network computing in the form of programmable dataplane switches have allowed researchers to implement novel solutions for many problems in networking such as: congestion control, load balancing,  and packet scheduling \cite{programmable-switch}. In Capybara, we leverage a programmable P4 switch for quickly redirecting packets to a new target backend server. 
 
 \section{Live TCP Connection Migration}
-This work is a direct successor to Prism \cite{prism}. Prism shows the feasibility of migrating TCP connection between backend servers.
+This work is a successor to Prism \cite{prism}. Prism shows the feasibility of migrating TCP connection between backend servers for object storage systems. Prism shows reverse proxies can bottleneck object storage systems despite additional computing capacity being available on the backend servers. Prism alleviates this bottleneck by migrating the connection between the reserve proxy and client to the backend and client. Thus relieving the reverse proxy bottleneck.
 
-Capybara reimplements the TCP handoff protocol introduced in Prism, but in a novel context: the kernel-bypass network IO.
+Live TCP connection migration differs over load balancing-based methods \cite{load-balancing, crab-bypassing-lod-balancer} in the following way: load balancers make a one-time decision of assigning a backend server at new-connection time. Once this connection is assigned it cannot be moved to a different machine. Different connections may generate disproportional amount of requests \cite{pegasus}, so even the same number of connections per backend machine may lead to unbalanced work per machine.
 
-This has the following advantages of Prism:
-- We control the userspace network stack. Prism requires network support 
-
-- P4
-- Fast
-- No need to change protocol
-- Dynamic Load Balancing
+Capybara attempts to rectify this by allowing connections to move seamlessly between backend machines. An elegant live connection migration mechanism should not require any changes or awareness of what is happening for the client, and should be backwards compatible with the de facto and ubiquitous TCP protocol. Capybara generalizes the ideas of Prism to support use cases beyond reverse proxy topologies and object storage systems. Additionally, Capybara reimplements the TCP handoff protocol introduced in Prism in a novel context: the kernel-bypass network IO. This allows for low latency, live TCP connection migration between backend servers.
 
 \section{Capybara Design}
-In this section we present our design for live TCP connection migration. We strive to make this migration as general as possible as to support a wide range of usescases.
+In this section we present our design for live TCP connection migration. We strive to make this migration as general as possible as to support a wide range of use cases.
 
-We strive to make as few assumptions about the datacenter network topology as possible. We consider a connection made between a client and a server application. This connection will be migrated from an origin machine to a destination machine. The network traffic between the client, origin machine, and destination machine is mediated by a programmable P4 switch. Both origin and destination machines have DPDK-supported NICs and run instances of the Catnip network stack.
+We strive to make as few assumptions about the datacenter network topology as possible. We consider a connection made between a client and a server application. This connection will be migrated from an origin machine to a destination machine. The network traffic between the client, origin machine, and destination machine is mediated by a programmable P4 switch. Both origin and destination machines have DPDK and RDMA supported NICs and run instances of the Catnip network stack.
 
 \subsection{Migration Outline}
-Migration Outline
+Here we give an overview of the methods used for migrating a connection between machines. $P$ is a server application modified to use Demikernel for low-latency kernel-bypass networking. One instance of $P$ runs per machine $M$. $M$ is a machine involved in live TCP Migration. Either the \textit{origin} or the \textit{destination}. $C$ is the current TCP Connection we want to migrate.
+$R$ is an RDMA connection between the origin and destination. This connection is used exclusively for migrating network connections in/out. Applications are expected to poll this connection frequently to accept incoming migrating connections. Every machine has this connection between each other. This connection $R$ is implemented and provided by the Capybara API, applications need only poll it. RDMA is chosen for its low-latency bulk data transfer abilities \cite{farm}.
 
-Definitions
-P is a server application modified to use Catnip for low-latency kernel-bypass networking. One instance of P runs per machine M.
-M is a machine involved in live TCP Migration. Either the origin or the destination.
-C is the current TCP Connection we want to migrate.
-B is a TCP (or UDP?) connection between the origin and destination. This connection is used exclusively for migrating network connections in/out. Applications are expected to poll this connection frequently to accept incoming migrating connections. Every instance has this connection between each other.
-
-Outline
-The origin decides to migrate an existing connection to a destination instance.
+Our TCP live connection migration works as follows. The origin machines decides to migrate an existing connection to a destination instance.
 The origin concurrently:
-Reroute Traffic
-Messages the switch asking it to reroute packets of connection C to the destination. 
-1) Serialize Connection
-Calls into Catnip via the `migrate\textunderscore{}connection\textunderscore{}out` method. This has the following effects:
-This connection gets tagged as `ConnectionMigratedOut`.
-Additional packets for this connection are buffered by Catnip.
-`migrate\textunderscore{}connection\textunderscore{}out` returns `ConnectionState`, the serialized state of the specified connection.
-2) Migrates connection state
-The origin uses B to send over the state of the connection to the destination.
-The destination receives the incoming `ConnectionState` by polling B. It uses the `ConnectionState` to establish a new connection by calling into Catnip via `migrate\textunderscore{}connection\textunderscore{}in`. C is put in a special state `ConnectionMigratedIn`. This has the following effect:
-Incoming packets will have an IP address different from the machine’s IP address. This is okay, Catnip rewrites/ignores the IP address for this connection.
-Outgoing packets have their source IP address rewritten to that of the origin.
-The destination sends the origin instance an END message via B. This has two effects:
-The origin sends the destination any remaining buffered packets for C.
-The origin removes any remaining state from its stack related to C.
-The destination receives any buffered packets from O.
-The connection is now fully migrated.
+\begin{compactitem}
+    \item \textbf{Reroute Incoming Traffic}: Origin messages the switch asking it to reroute packets of connection $C$ to the destination machine. New packets may arrive from the client before the connection is fully migrated into the destination. Our modified Capybara TCP/IP stack handles this scenario by buffering packets from unknown connections. It holds to these packets for some amount of time assuming a connection migration request is incoming. 
+    \item \textbf{Transfer Connection State}:
+    \begin{enumerate}
+        \item \textbf{Serialize Connection}: The origin calls into the TCP/IP stack via the \code{migrate\textunderscore{}connection\textunderscore{}out} method. This method 
+         tags the specified connection as \code{ConnectionMigratedOut}. Then it returns a \code{ConnectionState} struct. This is the serialized state of the specified connection.
+        \item The origin sends the serialized \code{ConnectionState} to the origin machine via the RDMA connection $R$.
+        \item The destination receives the incoming \code{ConnectionState} via polling its end of $R$. Then, it uses the \code{ConnectionState} to establish a new connection by calling into the \code{migrate\textunderscore{}connection\textunderscore{}in} method. $C$ is put in a special state \code{ConnectionMigratedIn}. This has the following effect:
+        \begin{compactitem}
+            \item The destination checks for any buffered packets that may have arrived during connection migration.
+            \item Incoming packets will have an IP address different from the destination machine’s IP address. This is okay, the TCP/IP rewrites/ignores the IP address for this connection.
+            \item Outgoing packets have their source IP address rewritten to that of the origin.
+        \end{compactitem}
+        \item The destination acknowledges the connection has been fully migrated in by sending the origin a message. The origin may now clean up any state associated with this connection. 
+        \item The connection is now fully migrated.
+    \end{enumerate}
+\end{compactitem}
 
+\subsection{The \code{ConnectionState} Struct}
+\code{ConnectionState} is a struct representing the serialized state of the connection. It includes all the state necessary for the connection migration. Figure \ref{fig:tcp-connection-state} shows an outline of this struct \footnote{The real \code{ConnectionState} includes other fields associated with implementations details of Demikernel.}.
 
-\subsection{Migration-aware applications}
-\subsection{Migration mechanism orthogonal from migration trigger}
+\begin{figure}[hbtp]
+    \begin{lstlisting}
+    struct ConnectionState<T> {
+        remote_address: IpAddress
+        remote_port: Port,
+        receive_queue: Vec<u8>,
+        send_queue: Vec<u8>,
+        maximum_segment_size: u32,
+        window_size: u32,
+        active_mss: u32,
+        seq_number: u32,
+        ack_number: u32,
+        state: T,
+    }
+    \end{lstlisting}
+    \caption{\code{ConnectionState} struct used by the Capybara implementation to serialize and deserialize TCP connections between instances of the Demikernel TCP/IP stack. The generic field \code{state} may be used to transfer any application-specific state. Its size is determined by the application at compile time.}
+    \label{fig:tcp-connection-state}
+\end{figure}
+
+\subsection{Migrating at the Request-Granularity}
+Connections cannot be migrated at any time, since Capybara does not introspect the client requests that the application receives. Furthermore, Capybara does not understand the format of incoming client requests. Therefore, we leave it up to the application to parse incoming requests. The application uses requests as the unit for migrating connections out. Between any requests, the application may decide to migrate out a connection.
+
+\subsection{Migration-aware Applications}
+The exact program behavior of migrating in/out a connection is application-specific. So any application hoping to leverage Capybara requires modification to support connection migration. We expect this to be a small change in the program logic. The following changes are required for an application to leverage capybara:
+\begin{compactitem}
+    \item \textbf{Migrating Out Decision}: The application implements some logic for deciding when it is too busy and should migrate out a connection.
+    \item \textbf{State Cleanup}: The application should clean up any state associated with a connection being migrated out.
+    \item \textbf{Polling For New Connections}: An application should periodically poll the incoming-connections Capybara connection. This connection should be polled frequently to minimize latency for connection migration.
+    \item \textbf{Incoming Connection State Allocation}: Once a new connection is migrated in, the application should allocate any state and run any code associated with a new connection.
+\end{compactitem}
+
+Notice these requirements are similar to what applications must already do for establishing new connections or ending current ones. So we expect using Capybara to require minimal changes to existing codebases.
+
+\subsection{Migration Procedure Orthogonal from Migration Trigger}
+Capybara intentionally separates the mechanism for migrations from the reason migration was initiated. Deciding when a connection should be migrated out is application-specific and varies based on the requirement of the application. Capybara extends the Demikernel API with a \code{migrate\textunderscore{}connection\textunderscore{}out} and \code{migrate\textunderscore{}connection\textunderscore{}in} methods. This method abstracts over the details of our connection migration.
+
 \subsection{Handling Program State}
+Stateful applications may have state associated with client connection. This state needs to be migrated out along with the serialized connection for seamless connection migration. Capybara is designed to target stateless applications which do not hold have any client state from request to request. Many web applications already meet this requirement, as popularized by RESTful APIs \cite{restful-apis}.
+Additionally, the serialized state that Capybara transfers between origin and destination machines supports an additional \code{state} field. This field can be used by applications to transfer any state necessary. This field can be arbitrarily large as required by the application. Of course, the application must implement additional logic to properly export and import this state. We expect the cost of transferring this state to be proportional to its size.
 
 \section{Implementation}
-Capybara is implemented on top of the Demikernel.
+Capybara is implemented as part of the Demikernel project. Capybara utilizes a modified version of Demikernel's TCP/IP userspace stack to support migrating connection in and out. Additionally, Capybara requires a programmable P4 switch for redirecting connections to the target machine. Capybara leverages advancements in network IO like DPDK for fast connection migration, and RDMA for fast TCP state transfer.
 
-DPDK
-RDMA
-P4 Communication
 \section{Ongoing Work}
-- This is ongoing work.
+This project is currently ongoing. The logic to serialize connections in and out of the TCP/IP is implemented and works in a testing environment. These tests use shared memory channels instead of sockets for transferring the state. Connections are migrated between two instances of our TCP/IP stack which run on different OS threads. This allows us to decouple the connection serialization/deserialization code from the network details for easier debugging.
+The next steps would be to implement the programmable switch logic so we may test Capybara across different machines. As an intermediary step, we could implement a software switch which emulates the programmable switch logic. This would allow us to debug our implementation purely in software and would not require an actual programmable switch.
 
 \subsection{Evaluation}
-\section{Related Work}
-- Caladan
+Our evaluation should should the following:
+\begin{compactitem}
+    \item \textbf{Proof-Of-Concept}: It is possible to correctly and seamlessly migrate connections between machines running in the same rack. Our implementation should avoid dropping client packets which would lead to expensive retransmission. 
+    \item \textbf{Low-latency}: Capybara should allow for fast live TCP connection migration between machines on the same rack. Demikernel lists RTT latencies for sending 64 bytes of data as 7.2$\mu{}$s for their cluster. We use this number to roughly estimate latency of our TCP handoff. Capybara attempts to execute steps concurrently to overlap these latencies. We hope to achieve a migration latency of 10$\mu{}$s.
+    \item \textbf{Capybara Is Useful}: Capybara's design should serve the need to modern datacenter applications. Minimal code changes are required to these applications to successfully leverage Capybara.
+    \item \textbf{Benefits Clusters}: Capybara should provide a measurable benefit to clusters and applications using it. Either through better work distribution across machines, or allow overwhelmed machines to quickly migrate out connections. This should be measurable as overall lower worst case latencies for a system, compared to a non-Capybara baseline.
+\end{compactitem}
+We hope to target applications in-memory KV stores like, Redis and Memcached. As well as HTTP servers with Capybara.

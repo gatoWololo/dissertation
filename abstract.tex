@@ -1,11 +1,8 @@
 \abstract{
-This dissertation covers various works during my PhD in the general area of operating systems and systems programming. Many projects share the themes of leveraging system call interposition and deterministic properties of programs. This dissertation overviews the ptrace Linux API for tracing and modifying live processes and proposes changes and features a next generation Linux process tracing mechanism should have.
+Modern software continues to grow in size and complexity with no signs of slowing down. Program tracing allows us to observe the execution of a program. OS-level program tracing is useful, as it allows us to abstract over many details of program execution and view programs based on the IO operations they perform. Beyond read-only program tracing, this dissertation overviews low-level process manipulation. We argue process manipulation is a useful and general technique with many applications.
 
- This dissertation covers the following projects:
- Dettrace: A deterministic container abstraction. Dettrace provides a containerized enviroment where any computation inside this container is guranteed to be deterministic via dynamic determinism enforcement. 
- Capybara: A technique for fast, live TCP connection migration leveraging advancements in kernel-bypass IO technology and programmable switches in the datacenter environment.
- ProcessCache: A system for automatically caching results of process-level computations. ProcessCache automatically infers inputs and outputs to a program and will only re-execute processes if inputs to them have changed. Otherwise, it skips unnecessary recomputation by using the cached results.
- Tivo: Tivo introduces the concept of lightweight record and replay. A lightweight determinism enforcement mechanism for thread-level nondeterminism.
+We show the utility of tracing and process manipulation by covering several projects which leverage these techniques. First, we describe Dettrace, a deterministic container abstraction. Dettrace provides a containerized environment where any computation inside the container is guaranteed to be deterministic. Next, we describe ProcessCache implements a system for automatically caching results of process-level computations. ProcessCache automatically infers inputs and outputs to a program and will only re-execute a process if its inputs have changed. Otherwise, it skips unnecessary recomputation by using the cached results. Finally, Tivo combines lightweight determinism enforcement with record and replay to suppress certain types of thread-level nondeterminism.
  
- The future work covers two directions for future work: ChaOS: a fuzzing style system for injecting system call failures into sofware, ensuring errors are handled by applications. And an overview of current and future direction for system call interposition.
+Finally, our future work proposes ChaOS, a fuzzing system for fault injection at system call sites. Lastly, we list key features and requirements for next generation program tracing and low-level process manipulation.
+
 }

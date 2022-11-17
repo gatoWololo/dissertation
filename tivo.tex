@@ -1,9 +1,10 @@
 \chpt{Tivo}
-This chapter is an updated and revised version the original lightweight record-and-replay white paper \citep{tivo}. This project eventually came to be known as Tivo.
-\section{Abstract}
-     In this paper we present Tivo, a system for lightweight record-and-replay (RR). In contrast to traditional "fully deterministic" RR solutions, lightweight RR focuses on handling nondeterminism arising from thread communication for programs with concurrent, message-passing architectures. By decreasing nondeterminism in programs, lightweight RR decreases the number of intermittent failures in program's test suites. We evaluated the effectiveness of lightweight RR on Servo, a highly concurrent web browser. Our evaluation shows lightweight RR is effective at greatly reducing intermittent failures for some tests, but not others. Lightweight RR performance overhead remains a work in progress, but log sizes are quite small. We believe with further work lightweight RR could prove useful for lowering nondeterminism in programs at a negligible performance overhead.
-\section{Background}
+So far, we have considered OS-level program tracing. In this chapter, we show tracing is useful at other levels of the software stack. This project traces messages at the language-level, this allows us to leverage language-specific and context-specific information not available with OS-based tracing. This allows us to work at the proper level of abstraction.
 
+\section{Introduction}
+This chapter presents Tivo, a system for lightweight record-and-replay (RR). In contrast to traditional "fully deterministic" RR solutions, lightweight RR focuses on handling nondeterminism arising from thread communication for programs with concurrent, message-passing architectures. By decreasing nondeterminism in programs, lightweight RR decreases the number of intermittent failures in program's test suites. We evaluated the effectiveness of lightweight RR on Servo, a highly concurrent web browser. Our evaluation shows lightweight RR is effective at greatly reducing intermittent failures for some tests, but not others.
+
+\section{Background}
 \subsection{Concurrent Message Passing Channels}
 Slowdowns of single-core year-to-year performance gains in computing systems gave rise to the need for highly concurrent systems that take advantage of multiple cores. Which are now available
 in most CPUs. Concurrency is usually implemented using threads with shared-memory based communication; locks enforce exclusive writes to memory. This type of systems make it difficult to reason about useful properties of concurrent programs, e.g. data race freedom and deadlock avoidance. Furthermore shared data and the locks that protect it are often logically decoupled. That is, grabbing a lock before accessing shared data is not enforced by the programming language or runtime. Instead, in the worst case, it is an implicit programming convention buried in the documentation, or at best, enforced through the object API and encapsulation.
@@ -415,18 +416,8 @@ of applications or tests benefit most from lightweight RR (if any). Performance 
 currently disappointing, work is needed to understand performance implications of lightweight
 RR.
 
-\section{Conclusion}
-In this paper, we describe lightweight RR. A hybrid approach between heavyweight, fully
-deterministic systems, and no determinism enforcement. Lightweight RR is designed to
-empirically lower the amount of intermittent test failures in a program's test suite,
-while enjoying minimal performance overhead and record-log sizes. Lightweight
-RR has exciting and promising future work avenues beyond the just record and replay.
-With more work, lightweight RR could prove to be a useful tool for the development
-and debugging of concurrent systems.
-
 \section{Addendum}
-In this section we cover some follow up work and thoughts after further research on lightweight RR. This project eventually stalled. Servo proved a hard program for diagnosing and evaluating the efficacy of lightweight RR. This is due to several reasons: Servo is massive and complicated, running scores of threads in parallel, Servo relies on a couple of Rayon parallelism and asynchronous frameworks: rayon and tokio. These frameworks have their own parallelism schemes and schedulers outside the current scope of lighweight RR, but they also present opportunities for future extensions, see Section \ref{sec:tivo-future}.
-
+In this section we cover some follow up work and thoughts after further research on lightweight RR. Servo proved a hard program for diagnosing and evaluating the efficacy of lightweight RR. This is due to several reasons: Servo is massive and complicated, running scores of threads in parallel, Servo relies on a couple of Rayon parallelism and asynchronous frameworks: rayon and tokio. These frameworks have their own parallelism schemes and schedulers outside the current scope of lighweight RR, but they also present opportunities for future extensions, see Section \ref{sec:tivo-future}.
 
 \subsection{Future Directions and Extensions} \label{sec:tivo-future}
 In this section I present thoughts, challenges, and possible future extensions for this line of work.

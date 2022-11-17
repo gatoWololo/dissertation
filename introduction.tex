@@ -1,4 +1,60 @@
-\chpt{Introduction}
+\chpt{Introduction \& Background}
 \label{chap:introduction}
 
-Do we need an intro?
+\newcommand{\code}[1]{\textsf{#1}}
+
+\section{Program Tracing}
+Program size and complexity continues to grow with no signs of stopping. Developer tools allow programmers to reason about and understand the behavior of their programs. With program size and complexity growing, program abstractions are essential: abstractions allow programmers to reason about the relevant parts of the program without having to consider all details at all levels of the software stack. One useful way of viewing a program is based on relevant operations a program may execute during its lifetime. For example, we may only be interested in seeing which files a program accesses. This information is not easily available from the source code or program tests.
+
+Program tracing is a useful way of getting this information. Tracing is a technique that allows us to observe the execution of a program. Furthermore, we can opt to only trace a subset of all operations, those relevant to our current task. Tracing allows us to focus on the high-level operations we are interested in, without having to consider the low-level details of program execution. While program tracing may be useful at at any level of the software stack, this dissertation focuses on OS-level tracing. We do not focus on other useful tracing methods, such as dynamic instrumentation tools \cite{intel-pin, instruction-punning}.  OS-level tracing offers several unique advantages: it allows us to treat programs as black-boxes, only focusing on the IO operations a program executes. This abstracts over many details of program execution: the programming language, compiler, libraries, runtime environment, etc. Furthermore, OS-level tracing does not require any source code availability or modification, allowing us to trace arbitrary executables.
+
+
+Program tracing can be thought of as a type of dynamic program analysis. One example of such a tool is strace. strace is a Linux utility that traces and reports the system call and signals executed by a program. strace allows us to quickly specify system call events we are intersted in. Some examples of operations that programmers may be interested in tracing include:
+\begin{compactitem}
+\item \textbf{File system accesses}: Files created, read, or modified by a program. We can also track individual writes or reads to files and view the bytes written or read.
+\item \textbf{Networking}: We can view networking done by programs using the standard POSIX socket API.
+\item \textbf{Thread/Process Creation and Exit}: Threads or processes spawned and exit events.
+\item \textbf{System Calls}: System calls executed by a program to gain insight to its execution.
+\item \textbf{Signals}: Signals received by a program.
+\end{compactitem}
+
+
+\section{Low-level Process Manipulation}
+Program tracing can be thought of as a read-only operation. Tracing observes the behavior of a program but does not modify or affect (functionally) the execution. The same methods used for program tracing can be used to dynamically modify the state of a program. Beyond tracing, this dissertation focuses on \textit{low-level program manipulation}. We argue program manipulation is a useful as a general technique with many applications to software systems. This dissertation presents various research projects, based on program manipulation methods, to build useful systems in various areas of systems. We focus on the main method for tracing and manipulating processes in Linux: ptrace. The future work section (\ref{sec:future_work}) gives an overview of other tracing and process manipulation techniques. This type of process manipulation works at a low level of the software stack, between the program executing in userspace but above the kernel. Manipulating a process' execution requires familiarity with many low-level OS concepts such as program registers, the system call ABI, signal delivery, etc. Therefore we use the term low-level process manipulation to refer to this type technique.
+
+\section{System Call Interposition}
+ "The system call is the fundamental interface between an application and the Linux kernel" \cite{syscall}. In Linux, executing nearly all IO operations requires a direct system call. Recent advancements in kernel-bypass IO are a notable exception to this, as they allow data path IO operations to execute without calling into kernel space; however, their control plane operations still require calls into the kernel. Therefore, a natural way of implementing OS-level tracing utilities is via system call interposition/interception (we use both terms interchangeably in this dissertation). System call interposition allows us to introspect all (or some subset) of system calls made by a program.  System call interposition is the main way we implement process-level manipulation techniques.
+
+\subsection{Use Cases}
+Program tracing is a powerful building block leveraged by various previous works. For example: to guarantee deterministic execution of batch processing \citep{detflow}, to precisely determine build dependencies \citep{perfectDependencies}, to find process-level races \citep{racepro}, and to build userspace record-and-replay systems \cite{mozilla-rr}. System call interposition can emulate system call executions. For example, by intercepting Windows API calls, systems like Wine \citep{wine} and Proton \citep{valve-proton} allow native Windows applications to run unmodified in a POSIX environment. Combining system call tracing, emulation, and modification allows us to build useful low-level systems. By intercepting, emulating, and modifying non-deterministic system calls, Dettrace \citep{dettrace} provides a deterministic container abstraction where any binary executed inside the container is guaranteed to be deterministic. ProcessCache (\ref{chap:processCache}) allows for automatic caching and skipping of redundant process execution, when none of the inputs to the computation have changed. 
+
+\subsection{Security Implications}
+Program tracing and low-level process manipulation provide many benefits and use cases, as outlined above. There are also security implications and open questions raised by these methods. All popular tracing methods allow the tracer to read arbitrary program memory. While this may superficially seem like a security concern, Linux uses per-user capabilities to determine permissions for program tracing. So tracing does not allow for "more" access to processes than the user already had.
+
+Tracing can be thought of as a "read only" operation which merely observes the state and IO of a program. Contrast this to low-level process manipulation. Which allows us to change the way a program executes. This comes with security implications, as incorrectly manipulating a process could lead to security vulnerabilities in an otherwise correct program. Our process-level manipulation works at the OS-level, so we may circumvent language runtimes or compilers, which may have provided execution guarantees and invariants to the program. Future work in this area should address this question by considering how we can provide low-level process manipulation operations in a safe manner while allowing programs to execute correctly.
+
+
+\section{The \code{ptrace} API} \label{sec:ptrace-summary}
+
+Ptrace is a Linux mechanism for tracing the execution of another program. Ptrace is powerful enough to implement debuggers like GDB and system call tracing utilities like strace. Ptrace allows one process, the tracer, to trace the execution of possibly many processes or threads, the tracees. A tracee executes until some event specified by the tracer occurs. On such an event the tracee is stopped and the tracer receives an event message from the OS. Possible events include: system call execution, instruction execution, process spawn, process calls execve, signal arrival, process exit, and more.
+
+While the tracee is stopped, the tracer can read and write to arbitrary memory and registers of the tracee. There are two system call interception events:
+\begin{compactitem}
+     \item Pre-hook events: The program is stopped before the system call is executed.
+     \item Post-hook events: The program is stopped right after the system call is complete but before it returns control to the program.
+\end{compactitem}
+     We can combine ptrace interception events plus arbitrary reads and writes to memory and registers to create powerful process manipulation mechanisms. With some work, ptrace can be used to inject arbitrary system calls into a process, change a system call's arguments before it is called, skip or emulate system calls on behalf of the tracee, and more.
+     
+
+\subsection{Improving Interception Performance with seccomp-bpf} \label{sec:seccomp}
+By default ptrace stops the tracee for every system call twice (pre-hook event and post-hook) , but Linux's \code{seccomp-bpf} mechanism allows for selective system call interception, avoiding interception overhead on system calls we are not interested in. Futhermore seccomp also allows the interception code to dynamically decide whether to await a system call's post-hook event, or simply skip until the next system call. This allows us, in certain scenarios, to skip the post-hook event altogether, further reducing overhead. Linux kernel versions $>= 4.8$ additionally optimize context switches by delivering a single event instead of separate pre-system-call and seccomp events. Older Linux kernel versions ($< 4.8$) can still be supported in a backwards compatible manner by falling back to the slower implementation.
+
+\subsection{Building More Complicated Operations with ptrace}
+The ptrace primitive operations can be used as building blocks to build more interesting, useful process manipulation mechanisms. In this section we show how to implement various general process manipulation mechanisms.
+
+ \textbf{System call modification}. During a pre-hook system call event, we may write to the registers and memory of a tracee. Therefore we can observe the current system call about to execute using PTRACE\textunderscore{}GETREGS and then write to the registers (via PTRACE\textunderscore{}SETREGS) to change any argument to the system call. We may further change the system call itself by writing the corresponding system call number to the RAX register. Arguments to this system call may be specified via the other registers based on the Linux ABI.
+
+ \textbf{System call replaying}.  We have access to a process' instruction pointer via the RIP register. This allows us to "rewind" execution of a
+   process by setting the value of RIP. All instructions on x86-64 capable of calling a system call are two bytes long. So setting the RIP register to $RIP - 2$ allows us to replay a system call an arbitrary number of times at system call sites. Arbitrary arguments and memory may be modified between repeated calls to this system call for a flexible and powerful system call replaying mechanism.
+
+ \textbf{System call injection}. System call replaying can be viewed as a special case of system call injection. It is easiest to inject arbitrary system calls during a system call interception event. All we have to do is change the registers to specify system calls on the tracee. A more intricate approach allows us to inject system calls at arbitrary points in the program execution. For example, we may rewrite the current code pointed by RIP with a system call instruction. This process in nontrivial and there are various edge cases to consider \cite{instruction-punning} \footnote{An alternate approach would record the instruction pointer address of first use of a system call instruction, then to inject a system call at arbitrary points, we could save the current value of RIP and overwrite it with our recorded system call instruction address. This would allow arbitrary system call injection during any ptrace event without requiring rewriting of code. While simpler to implement, our performance overhead would worsen when executing instruction jumps from distant regions of code.}.

@@ -51,7 +51,7 @@
 %\cosupervisortitle{Full Faculty Title and Affiliation} % If applicable, uncomment this line and edit the text between the {}. If you do, you will also need to edit line 38.
 \gradchair{Mayur Naik, Professor of Computer \& Information Science}
 \committee{Linh Thi Xuan Phan, Associate Professor of Computer \& Information Science}
-\committee{Sebastian Angel, Associate Professor of Computer \& Information Science}
+\committee{Sebastian Angel, Assistant Professor of Computer \& Information Science}
 \committee{Boon Thau Loo, Professor of Computer and Information Science} % If applicable, comment out or duplicate this line to remove or add a committee member
 \committee{Ryan R. Newton, Meta}
 %-------------------------------------------
@@ -115,13 +115,15 @@
 
 %%%%% MAIN TEXT %%%%%
 \begin{mainf} % The main body of your dissertation starts below this line 
+\newcommand{\dettrace}{DetTrace\xspace}
 
-% \input{introduction.tex}
+\input{introduction.tex}
 \input{dettrace.tex}
-\input{tivo.tex}
 \input{processCache.tex}
-\input{capybara.tex}
+\input{tivo.tex}
+% \input{capybara.tex}
 \input{futureWork.tex}
+\input{conclusion.tex}
 
 \end{mainf}
 

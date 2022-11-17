@@ -6,7 +6,8 @@
 
 \chpt{\pc: Automatic Process-Level Memoization}
 \label{chap:processCache}
-This chapter is an updated and revised version of our current \pc draft, meant to be published at a future conference. Figures and writing are entirely written by Kelly Shiptoski and myself in collaboration.
+This chapter covers the \pc{} project. In many ways, \pc{} is a spiritual successor to \dettrace{}. \pc{} furthers what is possible with low-level process manipulation by building on the methods we developed with \dettrace{}. The implementation of \pc{} is informed by problems encountered in \dettrace{}.
+
 \section{Introduction}
 Existing systems already attempt to skip unnecessary recomputation. At the language-level, a runtime may attempt cache previously computed results, a technique known as memoization. This technique is most popular in purely functional programming languages like Haskell, where one can statically determine the IO and side effects of a function. Futhermore, programmers may implement their own memoization or caching in an ad-hoc manner for performance gains.
 
@@ -203,26 +204,6 @@ The algorithm for computing the preconditions for a multi-\cacheunit{} subtree i
 
 While our prototype relies on ptrace and Linux-specific implementation details, the methods presented in this paper may work with any IO tracing mechanism. Our methodology may be used with another OS (windows, MacOS) or some other interception mechanism (dtrace or in-kernel).
 
-\subsection{Process Tracing Via ptrace}
-Linux provides an API for tracing the behavior processes: ptrace. Ptrace allows a process to trace various
-events of interest that another process may be doing such as system calls, signals, process exits,
-thread and process spawning. Here we give a brief overview of ptrace.
-
-When working with ptrace we use the following terms. There is always a singular single-threaded tracing process, the \textit{tracer}. One or more thread or processes that are being traced, the \textit{tracee}s. Any time a tracee executes an event of interest, the OS will stop the tracee's execution and inform the tracer of this event.
-
-In this stopped state, the tracer can perform various low-level operation on the tracee.
-\begin{compactitem}
-  \item Peek/Poke tracee memory: The tracer may read or write arbitrary bytes to the tracee's memory.
-  \item Inject arbitrary signals.
-  \item Read/write to program's registers.
-\end{compactitem}
-
-These operations are quite low-level and simple on their own, but these operations are powerful
-primitives. We can implement high-level and useful operations from these primitives such as:
-injecting arbitrary system calls into a tracee, changing the arguments to a system call about to
-be performed, change or emulate a system call in a process, observe the results of a system call,
-implement user-level, abeit slow, scheduling for processes or threads.
-
 \subsection{Asynchronous Handling of Ptrace Events}
 \pc implements a reusable library and runtime for handling ptrace IO event. This provides an a high-level abstraction and allows code to be written in an asynchronous programming model, which mirrors the logical steps of the code. See Section \ref{sec:betterPtrace} for a detailed explanation.
 
@@ -282,3 +263,6 @@ It becomes quickly apparent that \pc is spending an exorbitant amount of time ha
 In order to work around the limitations of hashing, two solutions were proposed: copying the input files to the cache, and checking the \texttt{mtime} of the resource instead of hashing it. Neither of these is perfect. Copying the files to the cache provides moderate improvement, but does not provide the performance gains we are looking for, and also adds to the space that the cache requires. Using the \texttt{mtime} mechanism provides much better speedups, and so was incorporated into the system as an option. Checking the \texttt{mtime} is fragile, and is not a portable solution. Luckily, \pc can be run using whichever of these metrics the user chooses, depending on what they value most. The \texttt{mtime} checking mechanism provides quite a performance boost, but the \texttt{RAxML} workload, which has the most output files (by a significant margin) of the bioinformatics workflows, still has an overhead of 2.7x (see the \textbf{mtime + sync copying} results in Figure \ref{fig:pc_slowdowns}).
 
 The second worst offender when it comes to overhead is the component of \pc that copies the output files to the cache. In the original \pc prototype, this was done at each process exit; this means that \pc is effectively blocked (and so are all the executions it is tracing) until it finishes copying the output files to the cache. Fortunately, unlike hashing input files, copying output files can be moved off the critical path. Because \pc has basic assumptions about how processes modifying the same file behave (Section \ref{sec:limitations}), and because output files are not copied to the cache until the end of execution, output files can be copied to the cache by background threads. A rudimentary experiment with just one background thread shows promising results (Figure \ref{fig:pc_slowdowns}. We plan to increase the number of parallel background threads copying output files to the cache and incorporate this into the system to improve the performance even more.
+
+
+
